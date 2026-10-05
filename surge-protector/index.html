@@ -1,0 +1,1122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9e0e4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Inside a Surge Protector">
+<meta property="og:description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back after loadshedding.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
+<title>Inside a Surge Protector</title>
+<meta name="description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back after loadshedding.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..600&display=swap">
+<style>
+/* Layout: a full-bleed 3D stage with the surge protector plugged into a wall socket and a fridge. The title sits on the stage top-left like a rating plate,
+   the power controls dock bottom-left, and the walkthrough is the one card (bottom-right; stacked under the stage on phones). */
+:root{
+  --bg:#d9e0e4; --bg-hi:#eff3f4; --ink:#14212a; --muted:#52616b; --line:rgba(20,33,42,.14);
+  --panel:rgba(248,250,250,.88); --panel-solid:#f8fafa; --glass:rgba(20,33,42,.10);
+  --volt:#c4780f; --air:#1f73b2; --lamp:#b6c0c6; --teal:#1a9e8f; --stop:#d23c5a;
+  --primary:#14212a; --on-primary:#f2f5f6; --shadow:.24; --pink:#b2306b; --pink-soft:rgba(178,48,107,.12);
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+    --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+    --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+    --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+  --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+  --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+  --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{
+  margin:0; overflow:hidden; color:var(--ink); font-family:var(--f-body); font-size:15px;
+  background-color:var(--bg);
+  background-image:radial-gradient(120% 85% at 38% 22%, var(--bg-hi), var(--bg) 72%);
+}
+.app{position:relative; height:100%; overflow:hidden}
+#stage{position:absolute; inset:0; width:100%; height:100%; display:block; outline:none; cursor:grab}
+#stage.pick{cursor:pointer}
+#stage:active{cursor:grabbing}
+
+.masthead{position:absolute; top:22px; left:24px; max-width:min(440px, calc(100% - 48px)); pointer-events:none; display:grid; gap:8px}
+.plate{justify-self:start; margin:0; font:500 11px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:5px 8px}
+h1{margin:0; font-family:var(--f-display); font-weight:780; font-stretch:125%; font-size:clamp(1.45rem, 2.5vw, 2.3rem); line-height:1.02; letter-spacing:-.012em; text-wrap:balance}
+.hint{margin:0; color:var(--muted); font-size:.92rem; line-height:1.45; max-width:42ch}
+.readout{display:flex; flex-wrap:wrap; gap:6px 20px; margin:4px 0 0}
+.readout div{display:grid; gap:2px}
+.readout dt{font:500 10px/1 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.readout dd{margin:0; font:500 13.5px/1.2 var(--f-mono); font-variant-numeric:tabular-nums}
+.meter{display:inline-block; width:34px; height:9px; margin-right:7px; vertical-align:0; border:1px solid var(--muted); border-radius:2px; position:relative}
+.meter i{position:absolute; left:1px; top:1px; bottom:1px; width:0; background:var(--teal); border-radius:1px}
+.meter.low i{background:var(--volt)}
+
+.hud{position:absolute; left:20px; right:20px; bottom:20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; pointer-events:none}
+.hud > *{pointer-events:auto}
+.dock{display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0}
+.btn{
+  height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap;
+  font:500 14px/1 var(--f-body); color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.btn:hover{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.lamp{width:8px; height:8px; border-radius:50%; background:var(--lamp); transition:background-color .2s, box-shadow .2s}
+.btn[aria-pressed="true"] .lamp{background:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent)}
+.btn.primary{background:var(--primary); color:var(--on-primary); border-color:var(--primary); font-family:var(--f-display); font-weight:680; font-stretch:115%; letter-spacing:.01em; padding:0 18px}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.plain-btn{background:transparent; border-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; color:var(--muted); padding:0 8px}
+.btn.plain-btn:hover{color:var(--ink)}
+button:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+.guide{
+  width:348px; flex:none; box-sizing:border-box; padding:18px 20px 16px; display:grid; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 32px var(--glass);
+}
+.guide-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+.eyebrow{font:500 10.5px/1 var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.count{font:500 11px/1 var(--f-mono); color:var(--muted); font-variant-numeric:tabular-nums}
+.guide h2{margin:0; font-family:var(--f-display); font-weight:720; font-stretch:112%; font-size:1.22rem; line-height:1.15; text-wrap:balance}
+.guide-body{margin:0; font-size:1.02rem; line-height:1.6; min-width:0}
+.spec{margin:0; padding-top:10px; border-top:1px dashed var(--line); font-size:.92rem; line-height:1.5; color:var(--ink)}
+.try{display:inline-block; margin-right:8px; padding:3px 7px; border-radius:4px; font:500 10px/1.2 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--pink); background:var(--pink-soft); vertical-align:1px}
+.guide-nav{display:flex; align-items:center; gap:10px; margin-top:4px}
+.dots{display:flex; gap:4px; list-style:none; margin:0; padding:0; flex:1; justify-content:center}
+.dots button{width:16px; height:16px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center}
+.dots button::before{content:""; width:14px; height:4px; border-radius:2px; background:var(--line); transition:background-color .2s}
+.dots button.done::before{background:color-mix(in srgb, var(--ink) 35%, transparent)}
+.dots button[aria-current="step"]::before{background:var(--pink)}
+.nav-btn{height:34px; padding:0 12px; font:500 13.5px/1 var(--f-body); cursor:pointer; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:7px; white-space:nowrap}
+.nav-btn:disabled{opacity:.4; cursor:default}
+.nav-btn.next{background:var(--primary); color:var(--on-primary); border-color:var(--primary)}
+
+.tip{
+  position:absolute; left:0; top:0; z-index:5; max-width:280px; pointer-events:none; padding:9px 11px 10px;
+  background:var(--panel-solid); border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px var(--glass);
+  display:grid; gap:3px; font-size:13px; line-height:1.4;
+}
+.tip b{font-family:var(--f-display); font-weight:700; font-stretch:112%; font-size:13.5px; color:var(--ink)}
+.tip span{color:var(--muted)}
+
+.labels{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+.lbl{position:absolute; left:0; top:0; display:flex; flex-direction:column-reverse; align-items:center; will-change:transform; visibility:hidden}
+.lbl.down{flex-direction:column}
+.lbl-pin{width:6px; height:6px; border-radius:50%; background:var(--pink); box-shadow:0 0 0 2px var(--panel-solid); flex:none}
+.lbl-stem{width:1px; height:var(--stem, 20px); background:var(--ink); opacity:.4; flex:none}
+.readout dd.hot{color:var(--stop)}
+.lbl-name{
+  font:640 11.5px/1.15 var(--f-display); font-stretch:110%; white-space:nowrap; color:var(--ink);
+  padding:4px 7px; border-radius:4px; background:var(--panel-solid); border:1px solid var(--line); box-shadow:0 2px 8px var(--glass);
+}
+.lbl.hot .lbl-name{border-color:var(--pink); box-shadow:0 0 0 2px var(--pink-soft)}
+
+.fail{position:absolute; inset:0; display:grid; place-items:center; padding-inline:24px}
+.fail div{max-width:420px; background:var(--panel-solid); border:1px solid var(--line); border-radius:12px; padding:20px 22px}
+.fail h2{margin:0 0 6px; font-family:var(--f-display); font-stretch:112%}
+.fail p{margin:0; color:var(--muted); line-height:1.5}
+
+@media (max-width: 760px){
+  .masthead{top:14px; left:16px; right:16px; max-width:none; gap:6px}
+  h1{font-size:1.3rem}
+  .hint{display:none}
+  .readout dd{font-size:12.5px}
+  .hud{left:12px; right:12px; bottom:12px; flex-direction:column; align-items:stretch; gap:8px}
+  .dock{gap:6px}
+  .btn{height:36px; padding:0 11px; font-size:13px}
+  .btn.primary{padding:0 14px}
+  .guide{width:auto; padding:14px 16px 12px; gap:8px}
+  .guide h2{font-size:1.08rem}
+  .guide-body{font-size:.95rem; max-height:22vh; overflow-y:auto}
+}
+@media (prefers-reduced-motion: reduce){ .lamp,.dots button::before{transition:none} }
+</style>
+<style>
+/* Collapsible walkthrough card: tap or swipe the header to fold it away */
+button.guide-head{
+  appearance:none; -webkit-appearance:none; position:relative; width:100%; margin:0; padding:0; border:0; background:none;
+  color:inherit; font:inherit; text-align:left; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+  display:flex; align-items:center; gap:10px;
+}
+button.guide-head .count{margin-left:auto}
+.fold{display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid var(--line); border-radius:6px;
+  font:500 10.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--panel-solid)}
+.fold svg{width:10px; height:10px; transition:transform .2s ease}
+button.guide-head:hover .fold{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.guide.collapsed .fold svg{transform:rotate(180deg)}
+.grip{display:none}
+.guide-content{display:grid; gap:inherit; min-width:0}
+.guide.collapsed .guide-content{display:none}
+.guide.collapsed{width:auto; padding-top:12px; padding-bottom:12px}
+@media (max-width: 760px){
+  .grip{display:block; position:absolute; top:-8px; left:50%; width:38px; height:4px; margin-left:-19px; border-radius:2px; background:color-mix(in srgb, var(--ink) 25%, transparent)}
+  button.guide-head{padding-top:6px}
+  .guide{padding-top:16px}
+  .guide.collapsed{padding-top:16px; padding-bottom:12px}
+}
+@media (prefers-reduced-motion: reduce){ .fold svg{transition:none} }
+
+/* Back-to-menu link */
+.back{pointer-events:auto; justify-self:start; display:inline-flex; align-items:center; gap:6px; margin:-6px 0 0 -8px; padding:6px 8px; border-radius:6px;
+  font:500 11.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.back:hover{background:var(--glass)}
+.back:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+/* Mobile additions for the standalone site */
+html,body{height:100%; height:100dvh}
+body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
+.app{height:100dvh}
+#stage{touch-action:none}
+.masthead{top:calc(22px + env(safe-area-inset-top)); left:calc(24px + env(safe-area-inset-left))}
+.hud{bottom:calc(20px + env(safe-area-inset-bottom)); left:calc(20px + env(safe-area-inset-left)); right:calc(20px + env(safe-area-inset-right))}
+@media (max-width: 760px){
+  .masthead{top:calc(12px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); right:calc(14px + env(safe-area-inset-right))}
+  .hud{left:calc(10px + env(safe-area-inset-left)); right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom))}
+  .dock{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+  .dock .btn{justify-content:center; padding:0 6px; min-width:0; height:40px}
+  #btn-explode{grid-column:1 / 3}
+  #btn-reset{background:var(--panel); border-color:var(--line)}
+  .nav-btn{height:40px; padding:0 14px}
+  .dots button{width:14px; height:28px}
+  .tip{max-width:min(280px, calc(100vw - 24px))}
+}
+@media (max-width: 380px){
+  .readout{gap:4px 14px}
+  .plate{font-size:10px}
+  .btn{font-size:12.5px; gap:6px}
+  .guide{padding:12px 14px 10px; gap:6px}
+  .guide h2{font-size:1rem}
+  .guide-body{max-height:18vh}
+  .spec{font-size:.84rem; padding-top:8px}
+  .dots{gap:2px}
+  .dots button{width:10px}
+  .dots button::before{width:8px}
+  .nav-btn{padding:0 11px}
+}
+@media (max-height: 500px) and (orientation: landscape){
+  .readout,.plate{display:none}
+  .guide-body{max-height:30vh}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <canvas id="stage" aria-label="Interactive 3D model of a red surge protector plugged into a wall socket, with a fridge plugged into it. Drag to orbit, scroll to zoom."></canvas>
+  <div class="labels" id="labels" aria-hidden="true"></div>
+
+  <header class="masthead" id="mast">
+    <a class="back" href="../">&larr; All machines</a>
+    <p class="plate">Model SP-16 · 230 V ~ 16 A · Surge-safe</p>
+    <h1>Inside a Surge Protector</h1>
+    <p class="hint" id="hint">Drag to orbit, scroll to zoom, hover any part to see what it does.</p>
+    <dl class="readout" aria-live="off">
+      <div><dt>Wall sends</dt><dd id="ro-wall">230 V</dd></div>
+      <div><dt>Fridge gets</dt><dd id="ro-fridge">230 V</dd></div>
+      <div><dt>Fridge</dt><dd id="ro-state">Humming</dd></div>
+    </dl>
+  </header>
+
+  <div class="hud" id="hud">
+    <nav class="dock" id="dock" aria-label="Power controls">
+      <button class="btn" id="btn-power" aria-pressed="false"><span class="lamp"></span>Loadshedding</button>
+      <button class="btn" id="btn-protect" aria-pressed="true"><span class="lamp"></span>Protector</button>
+      <button class="btn" id="btn-xray" aria-pressed="false"><span class="lamp"></span>See inside</button>
+      <button class="btn primary" id="btn-explode" aria-pressed="false">Explode</button>
+      <button class="btn plain-btn" id="btn-reset">Reset view</button>
+    </nav>
+
+    <aside class="guide" id="guide" aria-labelledby="g-title">
+      <button type="button" class="guide-head" id="g-toggle" aria-expanded="true" aria-controls="g-content" title="Tap or swipe down to hide"><span class="grip" aria-hidden="true"></span><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span><span class="fold"><span id="g-fold-txt">Hide</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+      <div class="guide-content" id="g-content">
+      <h2 id="g-title">Hello, plug!</h2>
+      <p class="guide-body" id="g-body" aria-live="polite"></p>
+      <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
+      <div class="guide-nav">
+        <button class="nav-btn" id="g-prev" disabled>Back</button>
+        <ol class="dots" id="g-dots"></ol>
+        <button class="nav-btn next" id="g-next">Start</button>
+      </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="tip" id="tip" hidden><b id="tip-name"></b><span id="tip-desc"></span></div>
+
+  <div class="fail" id="fail" hidden>
+    <div><h2>The 3D view didn't load</h2><p>This page needs WebGL and the Three.js library. Check your connection, then reload the page.</p></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+function fail(){ $('#fail').hidden = false; $('#hud').hidden = true; }
+if (!window.THREE || !THREE.OrbitControls || !THREE.RoomEnvironment) { fail(); return; }
+
+/* ---------------------------------------------------------------- helpers */
+const TAU = Math.PI * 2, V3 = THREE.Vector3, DS = THREE.DoubleSide;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+const rand = (a, b) => a + Math.random() * (b - a);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+
+function mergeGeos(list){
+  let nv = 0, ni = 0;
+  for (const g of list){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+  let vo = 0, io = 0;
+  for (const g of list){
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3);
+    if (g.index){ const a = g.index.array; for (let i = 0; i < a.length; i++) idx[io++] = a[i] + vo; }
+    else for (let i = 0; i < n; i++) idx[io++] = vo + i;
+    vo += n; g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  return out;
+}
+const v2 = pts => pts.map(([r, y]) => new THREE.Vector2(r, y));
+function latheY(profile, segs = 64, p0 = 0, pl = TAU){ return new THREE.LatheGeometry(v2(profile), segs, p0, pl); }
+function cylY(r, y0, y1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; }
+function cylX(r, x0, x1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg); g.rotateZ(Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+function rrShape(w, h, r){
+  r = Math.max(.0004, Math.min(r, w / 2, h / 2));
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function roundedBox(w, h, d, b){
+  const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, b * .8), { depth: Math.max(.0002, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 6 });
+  g.translate(0, 0, -(d - 2 * b) / 2); return g;
+}
+// extrude a top-view shape (shape x = world x, shape y = -world z) upward from y0 by depth
+function slab(shape, y0, depth, bevel = 0){
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(.0002, depth - 2 * bevel), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 48 });
+  g.rotateX(-Math.PI / 2); g.translate(0, y0 + bevel, 0); return g;
+}
+function tube(points, radius, segs = 24, radial = 6){ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), segs, radius, radial, false); }
+function canvasTex(w, h, draw){ const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.userData = { canvas: c, ctx: x }; return t; }
+
+/* ---------------------------------------------------------------- renderer, scene, camera */
+const canvas = $('#stage');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+catch (e) { fail(); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 40);
+camera.position.set(.6, .5, 1.1);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+controls.minDistance = .18; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI / 2 - .02;
+controls.screenSpacePanning = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a979e, .38));
+const key = new THREE.DirectionalLight(0xffffff, 1.7);
+key.position.set(-1.3, 3.1, 1.7);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: .5, far: 8 });
+key.shadow.bias = -.0004; key.shadow.normalBias = .01;
+key.target.position.set(0, 0, -.2);
+scene.add(key, key.target);
+const rimLight = new THREE.DirectionalLight(0xd9e6ff, .5);
+rimLight.position.set(2, 1.4, -2.2);
+scene.add(rimLight);
+
+const floorMat = new THREE.ShadowMaterial({ opacity: .24 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+scene.add(floor);
+
+/* ---------------------------------------------------------------- materials */
+const MAT = {
+  pink: () => new THREE.MeshPhysicalMaterial({ color: 0xe8579b, roughness: .38, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  pinkLight: () => new THREE.MeshPhysicalMaterial({ color: 0xef78b0, roughness: .36, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  trim: () => new THREE.MeshPhysicalMaterial({ color: 0x9a1a54, roughness: .42, clearcoat: .25, side: DS }),
+  white: () => new THREE.MeshPhysicalMaterial({ color: 0xf3eff1, roughness: .4, clearcoat: .3, envMapIntensity: .8, side: DS }),
+  grey: () => new THREE.MeshStandardMaterial({ color: 0x5a5f66, roughness: .6, side: DS }),
+  dark: () => new THREE.MeshStandardMaterial({ color: 0x2b2f34, roughness: .55, side: DS }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: 0x15171b, roughness: .08, clearcoat: 1, clearcoatRoughness: .05, side: DS }),
+  satin: () => new THREE.MeshStandardMaterial({ color: 0xc4c9cd, metalness: .9, roughness: .3, side: DS }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: 0x26292c, roughness: .82, side: DS }),
+  pcb: () => new THREE.MeshStandardMaterial({ color: 0x2c7a4b, roughness: .55, side: DS }),
+  cell: () => new THREE.MeshPhysicalMaterial({ color: 0x3b6fd8, roughness: .35, clearcoat: .5, side: DS }),
+  bristle: () => new THREE.MeshStandardMaterial({ color: 0xf6a9cb, roughness: .7, side: DS }),
+  fabric: () => new THREE.MeshStandardMaterial({ color: 0xf8e3ee, roughness: 1, side: DS }),
+};
+
+/* ---------------------------------------------------------------- parts registry */
+const parts = {}, partList = [], shellMats = [];
+function makePart(id, name, desc, parent, row){
+  const g = new THREE.Group(); g.name = id; parent.add(g);
+  const p = { id, name, desc, row, group: g, meshes: [], mats: [], hl: 0, dist: 0, rank: 0, base: new V3(), anchor: new V3(), side: 'right', stem: 24, labelEl: null };
+  parts[id] = p; partList.push(p); return p;
+}
+function addMesh(p, geo, mat, o = {}){
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = o.shadow !== false; m.receiveShadow = o.receive !== false;
+  m.userData.part = p; m.userData.shell = !!o.shell;
+  (o.parent || p.group).add(m);
+  p.meshes.push(m);
+  if (!p.mats.includes(mat)){
+    p.mats.push(mat);
+    mat.userData.base = mat.color.clone();
+    mat.userData.op = mat.opacity;
+    if (o.shell){ mat.transparent = true; shellMats.push(mat); }
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------- scene tweaks: a small plug against a wall */
+camera.near = .004; camera.far = 30; camera.updateProjectionMatrix();
+controls.minDistance = .05; controls.maxDistance = 3;
+controls.minAzimuthAngle = -1.75; controls.maxAzimuthAngle = 1.75;
+key.position.set(-1.5, 1.3, 2.8); key.target.position.set(.15, .15, 0);
+Object.assign(key.shadow.camera, { left: -.9, right: .9, top: .9, bottom: -.9, near: .5, far: 7 });
+key.shadow.camera.updateProjectionMatrix();
+key.shadow.bias = -.0002; key.shadow.normalBias = .002;
+const hemi = scene.children.find(o => o.isHemisphereLight);
+const LIGHT_BASE = { hemi: hemi.intensity, key: key.intensity, rim: rimLight.intensity };
+
+// the floor stops at the wall, so shadows can't land behind it
+floor.geometry.dispose(); floor.geometry = new THREE.PlaneGeometry(6, 3).translate(0, -1.5, 0);
+const wallMat = new THREE.ShadowMaterial({ opacity: .2 });
+{
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), wallMat);
+  wall.position.set(0, 1, 0); wall.receiveShadow = true; scene.add(wall);
+  const skirt = new THREE.Mesh(roundedBox(4, .07, .012, .002).translate(0, .035, .006), MAT.white());
+  skirt.receiveShadow = true; skirt.castShadow = true; scene.add(skirt);
+}
+
+/* ---------------------------------------------------------------- small geometry helpers */
+function ext(shape, z0, depth, bevel = 0){
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(.0002, depth - 2 * bevel), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 24 });
+  g.translate(0, 0, z0 + bevel); return g;
+}
+function cylZ(r, z0, z1, seg = 24, open = false){ const g = new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), seg, 1, open); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; }
+const V2 = (x, y) => new THREE.Vector2(x, y);
+const circle = (cx, cy, r) => { const p = new THREE.Path(); p.absarc(cx, cy, r, 0, TAU, true); return p; };
+const rrPts = (w, h, r, cx = 0, cy = 0) => rrShape(w, h, r).getPoints(8).map(v => V2(v.x + cx, v.y + cy));
+// a squashed, tilted hexagon (the small SA / Euro socket recess)
+function hexPts(cx, cy, rx, ry, rot){
+  const pts = [], c = Math.cos(rot), s = Math.sin(rot);
+  for (let i = 0; i < 6; i++){ const a = i / 6 * TAU, X = Math.cos(a) * rx, Y = Math.sin(a) * ry; pts.push(V2(cx + c * X - s * Y, cy + s * X + c * Y)); }
+  return pts;
+}
+
+/* ---------------------------------------------------------------- layout (metres). Wall is the z = 0 plane, floor is y = 0 */
+const SOCK = { x: -.02, y: .28 };                         // wall socket outlet centre
+const ADP = new V3(SOCK.x, SOCK.y + .018, .009);          // surge protector origin: back face, body centre
+const A = (x, y, z) => new V3(ADP.x + x, ADP.y + y, ADP.z + z);
+const BW = .058, BH = .1;                                 // body width and height
+const P16 = { E: V2(0, -.0009), L: V2(.0127, -.0295), N: V2(-.0127, -.0295) };   // big 3-pin socket and plug pins (same line)
+const HEX = { c: V2(0, .026), rx: .02, ry: .0125, rot: .2 };
+const hu = V2(Math.cos(HEX.rot), Math.sin(HEX.rot)), hv = V2(-Math.sin(HEX.rot), Math.cos(HEX.rot));
+const PHX = {
+  L: V2(HEX.c.x + hu.x * .0095 - hv.x * .0015, HEX.c.y + hu.y * .0095 - hv.y * .0015),
+  N: V2(HEX.c.x - hu.x * .0095 - hv.x * .0015, HEX.c.y - hu.y * .0095 - hv.y * .0015),
+  E: V2(HEX.c.x + hv.x * .003, HEX.c.y + hv.y * .003)
+};
+const LEDP = V2(.022, .043);
+const MOVP = { x: -.015, y: .0125, z0: .0245, z1: .0285 };
+const FUSEP = { x: -.0015, y: .0125, z: .0258 };
+const FX = .45, FZ = .3, FK = .7;                          // fridge centre on the floor, and its size
+
+const adaptor = new THREE.Group(); adaptor.position.copy(ADP); scene.add(adaptor);
+
+const redShell = () => new THREE.MeshPhysicalMaterial({ color: 0x6a0204, roughness: .34, clearcoat: .6, clearcoatRoughness: .18, transparent: true, opacity: .96, envMapIntensity: .9, side: DS });
+const brass = () => new THREE.MeshStandardMaterial({ color: 0xd4a640, metalness: .9, roughness: .3, side: DS });
+
+/* ================================================================ SURGE PROTECTOR */
+// Plug pins (back)
+{
+  const p = makePart('pins', 'Plug pins', 'Three metal pins that push into the wall socket. The top one is the earth pin, a safe path into the ground.', adaptor, 'adaptor');
+  addMesh(p, mergeGeos([
+    cylZ(.00435, -.028, .004, 28).translate(P16.E.x, P16.E.y, 0),
+    cylZ(.00355, -.019, .004, 28).translate(P16.L.x, P16.L.y, 0),
+    cylZ(.00355, -.019, .004, 28).translate(P16.N.x, P16.N.y, 0)
+  ]), MAT.satin());
+  addMesh(p, mergeGeos([cylZ(.0037, -.009, .0002, 28).translate(P16.L.x, P16.L.y, 0), cylZ(.0037, -.009, .0002, 28).translate(P16.N.x, P16.N.y, 0)]), MAT.dark());
+}
+// Back cover with the plug collar
+{
+  const p = makePart('backCover', 'Back cover', 'The back half of the red case. It holds the pins tight so they never wiggle loose.', adaptor, 'adaptor');
+  const pinHoles = () => [circle(P16.E.x, P16.E.y, .0045), circle(P16.L.x, P16.L.y, .0038), circle(P16.N.x, P16.N.y, .0038)];
+  const collar = new THREE.Shape(rrPts(.05, .062, .008, 0, -.016)); collar.holes.push(...pinHoles());
+  const plate = new THREE.Shape(rrPts(BW, BH, .009)); plate.holes.push(...pinHoles());
+  const ring = new THREE.Shape(rrPts(BW, BH, .009)); ring.holes.push(new THREE.Path(rrPts(BW - .0044, BH - .0044, .007)));
+  addMesh(p, mergeGeos([ext(collar, 0, .0125, .001), ext(plate, .012, .003), ext(ring, .015, .011)]), redShell(), { shell: true });
+}
+// Brass contacts (the "roads")
+{
+  const p = makePart('contacts', 'Brass strips', 'Shiny brass roads that carry electricity from the pins at the back to the holes at the front.', adaptor, 'adaptor');
+  const z = .018, g = [];
+  const road = pts => g.push(tube(pts.map(([x, y, zz]) => new V3(x, y, zz)), .0011, 40, 4));
+  for (const k of ['L', 'N', 'E']){
+    const a = P16[k], h = PHX[k];
+    road([[a.x, a.y, .004], [a.x, a.y, z], [a.x, a.y + .006, z], [h.x, h.y - .006, z], [h.x, h.y, z], [h.x, h.y, .023]]);
+    road([[a.x, a.y, z], [a.x, a.y, .023]]);
+    g.push(new THREE.CylinderGeometry(k === 'E' ? .0047 : .0041, k === 'E' ? .0047 : .0041, .011, 20, 1, true).rotateX(Math.PI / 2).translate(a.x, a.y, .0285));
+    g.push(new THREE.CylinderGeometry(.0024, .0024, .009, 16, 1, true).rotateX(Math.PI / 2).translate(h.x, h.y, .0275));
+  }
+  addMesh(p, mergeGeos(g), brass());
+}
+// Circuit board, resistor and wires
+{
+  const p = makePart('board', 'Circuit board', 'A little green board that holds the surge catcher, the fuse and the light, and joins them to the brass strips.', adaptor, 'adaptor');
+  addMesh(p, new THREE.BoxGeometry(.046, .012, .0016).translate(0, .0095, .0228), MAT.pcb());
+  addMesh(p, cylX(.0011, .01, .016, 14).translate(0, .0085, .0248), new THREE.MeshStandardMaterial({ color: 0xd9c08c, roughness: .6 }));
+  const leads = [];
+  for (const dx of [-.0007, .0007]) leads.push(tube([new V3(.016 + dx, .0145, .0237), new V3(.019 + dx, .03, .03), new V3(LEDP.x + dx, LEDP.y, .0355)], .00035, 20, 4));
+  addMesh(p, mergeGeos(leads), MAT.satin());
+  addMesh(p, tube([new V3(.006, .0125, .0237), new V3(.01, .008, .02), new V3(P16.L.x, .0, .018)], .0007, 16, 5), new THREE.MeshStandardMaterial({ color: 0xc23b3b, roughness: .5 }));
+  addMesh(p, tube([new V3(-.006, .006, .0237), new V3(-.003, .003, .02), new V3(P16.E.x, .0, .018)], .0007, 16, 5), new THREE.MeshStandardMaterial({ color: 0x3aa655, roughness: .5 }));
+}
+// Thermal fuse
+{
+  const p = makePart('fuse', 'Fuse', 'A brave little fuse. If a giant zap comes, it breaks on purpose to stop the electricity.', adaptor, 'adaptor');
+  addMesh(p, cylX(.0017, FUSEP.x - .0045, FUSEP.x + .0045, 20).translate(0, FUSEP.y, FUSEP.z), new THREE.MeshStandardMaterial({ color: 0xbcc4ca, metalness: .7, roughness: .35 }));
+  addMesh(p, mergeGeos([
+    tube([new V3(FUSEP.x + .0045, FUSEP.y, FUSEP.z), new V3(.005, FUSEP.y, .025), new V3(.006, .0125, .0237)], .0004, 10, 4),
+    tube([new V3(FUSEP.x - .0045, FUSEP.y, FUSEP.z), new V3(MOVP.x + .006, MOVP.y, .0262)], .0004, 6, 4)
+  ]), MAT.satin());
+}
+// MOV: the surge catcher
+let movMat;
+{
+  const p = makePart('mov', 'Surge catcher (MOV)', 'The blue disc. When too much electricity rushes in, it sends the extra away through the earth pin.', adaptor, 'adaptor');
+  movMat = new THREE.MeshPhysicalMaterial({ color: 0x2f6fd6, roughness: .35, clearcoat: .6, emissive: 0x000000 });
+  addMesh(p, cylZ(.0068, MOVP.z0, MOVP.z1, 40).translate(MOVP.x, MOVP.y, 0), movMat);
+  const lab = canvasTex(128, 128, (x, w) => { x.fillStyle = 'rgba(255,255,255,.85)'; x.font = '700 22px "IBM Plex Mono", monospace'; x.textAlign = 'center'; x.fillText('14D', w / 2, 58); x.fillText('471K', w / 2, 84); });
+  const face = new THREE.Mesh(new THREE.CircleGeometry(.0058, 32).translate(MOVP.x, MOVP.y, MOVP.z1 + .0001), new THREE.MeshBasicMaterial({ map: lab, transparent: true, depthWrite: false }));
+  face.raycast = () => {}; p.group.add(face);
+  addMesh(p, mergeGeos([
+    tube([new V3(MOVP.x - .002, MOVP.y - .006, .0262), new V3(-.009, .0075, .0245), new V3(-.006, .006, .0237)], .0004, 10, 4)
+  ]), MAT.satin());
+}
+// LED
+let ledMat, ledGlow;
+{
+  const p = makePart('led', 'Guard light', 'This light glows when the surge protector is on guard.', adaptor, 'adaptor');
+  ledMat = new THREE.MeshStandardMaterial({ color: 0x0b2a26, roughness: .25, emissive: 0x000000, transparent: true, opacity: .95 });
+  const dome = new THREE.SphereGeometry(.0016, 20, 10, 0, TAU, 0, Math.PI / 2); dome.rotateX(Math.PI / 2); dome.translate(LEDP.x, LEDP.y, .0405);
+  addMesh(p, mergeGeos([cylZ(.0016, .0355, .0405, 20).translate(LEDP.x, LEDP.y, 0), dome]), ledMat);
+  const halo = canvasTex(64, 64, (x, w) => { const g = x.createRadialGradient(w / 2, w / 2, 0, w / 2, w / 2, w / 2); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.35, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, w); });
+  ledGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: halo, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+  ledGlow.position.set(LEDP.x, LEDP.y, .0435); ledGlow.scale.setScalar(.011); ledGlow.raycast = () => {}; p.group.add(ledGlow);
+}
+// Front cover with the two sockets and printing
+{
+  const p = makePart('frontCover', 'Front cover', 'The front of the red case, with holes for a big plug and a small plug.', adaptor, 'adaptor');
+  const m = redShell();
+  const hexOuter = hexPts(HEX.c.x, HEX.c.y, HEX.rx, HEX.ry, HEX.rot);
+  const plate = new THREE.Shape(rrPts(BW, BH, .009));
+  plate.holes.push(new THREE.Path(hexOuter), circle(P16.E.x, P16.E.y, .0048), circle(P16.L.x, P16.L.y, .0042), circle(P16.N.x, P16.N.y, .0042), circle(LEDP.x, LEDP.y, .0018));
+  const ring = new THREE.Shape(rrPts(BW, BH, .009)); ring.holes.push(new THREE.Path(rrPts(BW - .0044, BH - .0044, .007)));
+  const recess = new THREE.Shape(hexPts(HEX.c.x, HEX.c.y, HEX.rx + .0013, HEX.ry + .0013, HEX.rot)); recess.holes.push(new THREE.Path(hexOuter));
+  const floor = new THREE.Shape(hexOuter); floor.holes.push(circle(PHX.L.x, PHX.L.y, .0021), circle(PHX.N.x, PHX.N.y, .0021), circle(PHX.E.x, PHX.E.y, .0024));
+  addMesh(p, mergeGeos([ext(ring, .026, .013), ext(plate, .039, .0035, .0012), ext(recess, .031, .009), ext(floor, .031, .0015)]), m, { shell: true });
+  // moulded printing (original artwork, drawn in code)
+  const TW = 512, TH = Math.round(512 * BH / BW);
+  const tx = x => (x / BW + .5) * TW, ty = y => (.5 - y / BH) * TH;
+  const print = canvasTex(TW, TH, x => {
+    x.fillStyle = 'rgba(110,8,14,.7)'; x.strokeStyle = 'rgba(110,8,14,.7)';
+    x.font = '500 21px "IBM Plex Mono", monospace'; x.textAlign = 'right'; x.textBaseline = 'middle';
+    x.fillText('PROTECTOR ON', tx(LEDP.x - .0035), ty(LEDP.y + .0005));
+    // logo: lightning bolt in a ring + wordmark
+    const cx = tx(-.017), cy = ty(.0085);
+    x.lineWidth = 5; x.beginPath(); x.arc(cx, cy, 24, 0, TAU); x.stroke();
+    x.beginPath(); x.moveTo(cx + 4, cy - 17); x.lineTo(cx - 9, cy + 3); x.lineTo(cx, cy + 3); x.lineTo(cx - 4, cy + 17); x.lineTo(cx + 9, cy - 3); x.lineTo(cx, cy - 3); x.closePath(); x.fill();
+    x.font = '800 40px "Archivo", Arial, sans-serif'; x.textAlign = 'left';
+    x.fillText('SURGESAFE', cx + 34, cy + 2);
+    x.font = '500 18px "IBM Plex Mono", monospace'; x.textAlign = 'center';
+    x.fillText('16 A  ·  230 V~', tx(0), ty(-.043));
+  });
+  const decal = new THREE.Mesh(new THREE.PlaneGeometry(BW, BH).translate(0, 0, .0428), new THREE.MeshStandardMaterial({ map: print, transparent: true, depthWrite: false, roughness: .5, polygonOffset: true, polygonOffsetFactor: -1 }));
+  decal.userData.part = p; decal.userData.shell = true; decal.raycast = () => {};
+  p.group.add(decal);
+  const dm = decal.material; dm.userData.base = dm.color.clone(); dm.userData.op = 1; shellMats.push(dm);
+}
+// The fridge's plug, pushed into the big socket
+{
+  const p = makePart('fridgePlug', 'Fridge plug', 'The fridge’s own plug. It pushes into the big holes at the front of the surge protector.', adaptor, 'adaptor');
+  const plugMat = MAT.white();
+  addMesh(p, roundedBox(.038, .052, .03, .006).translate(0, -.021, .059), plugMat, { shell: true });
+  addMesh(p, cylY(.0042, -.054, -.044, 20).translate(0, 0, .059), plugMat, { shell: true });
+  addMesh(p, mergeGeos([cylZ(.0042, .036, .044, 20).translate(P16.E.x, P16.E.y, 0), cylZ(.0035, .036, .044, 20).translate(P16.L.x, P16.L.y, 0), cylZ(.0035, .036, .044, 20).translate(P16.N.x, P16.N.y, 0)]), MAT.satin());
+}
+
+/* ================================================================ WALL SOCKET, CORD, FRIDGE */
+{
+  const p = makePart('wallSocket', 'Wall socket', 'Where electricity comes out of the wall. Only grown-ups plug things in here.', scene, 'prop');
+  addMesh(p, roundedBox(.1, .1, .009, .003).translate(SOCK.x + .022, SOCK.y, .0045), MAT.white());
+  const rocker = new THREE.Group(); rocker.position.set(SOCK.x + .05, SOCK.y, .009); rocker.rotation.x = -.14; p.group.add(rocker);
+  addMesh(p, roundedBox(.02, .032, .007, .0022).translate(0, 0, .0035), MAT.white(), { parent: rocker });
+  addMesh(p, new THREE.BoxGeometry(.008, .004, .001).translate(0, .011, .0072), new THREE.MeshStandardMaterial({ color: 0xd2332f, roughness: .5 }), { parent: rocker });
+}
+let cordCurve;
+{
+  const p = makePart('cord', 'Fridge cord', 'The long wire that carries electricity from the plug to the fridge.', scene, 'prop');
+  cordCurve = new THREE.CatmullRomCurve3([A(0, -.054, .059), A(.001, -.075, .062), new V3(SOCK.x + .006, .12, .085), new V3(SOCK.x + .03, .012, .1), new V3(.08, .0035, .105), new V3(.2, .0035, .1), new V3(.3, .005, .1), new V3(FX + .012 * FK - .012, .03, FZ - .251 * FK + .004), new V3(FX + .012 * FK, .036, FZ - .251 * FK)]);
+  addMesh(p, new THREE.TubeGeometry(cordCurve, 90, .0028, 8, false), MAT.white());
+}
+// cute face for the fridge door, redrawn when its mood changes
+const faceTex = canvasTex(512, 340, () => {});
+let faceMood = '';
+function drawFace(mood){
+  if (mood === faceMood) return; faceMood = mood;
+  const x = faceTex.userData.ctx, w = 512, h = 340, ink = '#3b2a33';
+  x.clearRect(0, 0, w, h);
+  x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = ink; x.fillStyle = ink;
+  const ex = [170, 342], ey = 140;
+  x.fillStyle = 'rgba(247,120,150,.4)';
+  for (const cx of [110, 402]){ x.beginPath(); x.ellipse(cx, 205, 40, 24, 0, 0, TAU); x.fill(); }
+  x.fillStyle = ink; x.lineWidth = 14;
+  if (mood === 'sleep'){
+    for (const cx of ex){ x.beginPath(); x.arc(cx, ey - 8, 34, .25 * Math.PI, .75 * Math.PI); x.stroke(); }
+    x.beginPath(); x.ellipse(256, 230, 18, 12, 0, 0, TAU); x.stroke();
+    x.font = '800 54px "Archivo", Arial, sans-serif'; x.fillText('z', 410, 80); x.font = '800 38px "Archivo", Arial, sans-serif'; x.fillText('z', 456, 40);
+  } else if (mood === 'ouch'){
+    for (const cx of ex){ x.beginPath(); x.moveTo(cx - 26, ey - 26); x.lineTo(cx + 26, ey + 26); x.moveTo(cx + 26, ey - 26); x.lineTo(cx - 26, ey + 26); x.stroke(); }
+    x.beginPath(); x.moveTo(176, 240); for (let i = 1; i <= 8; i++) x.lineTo(176 + i * 20, 240 + (i % 2 ? -16 : 16)); x.stroke();
+  } else {
+    for (const cx of ex){
+      x.beginPath(); x.ellipse(cx, ey, 30, 38, 0, 0, TAU); x.fill();
+      x.fillStyle = '#ffffff'; x.beginPath(); x.arc(cx - 10, ey - 14, 10, 0, TAU); x.fill(); x.beginPath(); x.arc(cx + 10, ey + 12, 5, 0, TAU); x.fill(); x.fillStyle = ink;
+    }
+    x.beginPath(); x.arc(256, 200, 58, .15 * Math.PI, .85 * Math.PI); x.stroke();
+  }
+  faceTex.needsUpdate = true;
+}
+drawFace('happy');
+const fridge = new THREE.Group(); fridge.position.set(FX, 0, FZ); fridge.scale.setScalar(FK); scene.add(fridge);
+let compShake;
+{
+  const p = makePart('fridge', 'Fridge', 'A little fridge that keeps food and milk cold. It needs electricity all day and all night.', fridge, 'prop');
+  const body = MAT.white();
+  addMesh(p, roundedBox(.36, .4, .32, .02).translate(0, .225, -.01), body);
+  addMesh(p, roundedBox(.35, .39, .024, .008).translate(0, .225, .162), MAT.white());
+  addMesh(p, roundedBox(.016, .17, .022, .006).translate(.14, .27, .184), MAT.pink());
+  addMesh(p, roundedBox(.33, .006, .02, .002).translate(0, .4, .162), MAT.pinkLight());
+  const feet = []; for (const sx of [-.15, .15]) for (const sz of [-.13, .13]) feet.push(cylY(.012, 0, .026, 16).translate(sx, 0, sz));
+  addMesh(p, mergeGeos(feet), MAT.dark());
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(.2, .133).translate(-.02, .29, .1745), new THREE.MeshStandardMaterial({ map: faceTex, transparent: true, depthWrite: false, roughness: .4 }));
+  face.raycast = () => {}; p.group.add(face);
+}
+{
+  const p = makePart('coil', 'Cooling pipes', 'Zig-zag pipes on the back of the fridge. They let the heat from inside the fridge escape.', fridge, 'prop');
+  const pts = []; for (let i = 0; i <= 10; i++){ const y = .1 + i * .028; pts.push(new V3(i % 2 ? .13 : -.13, y, -.181)); }
+  const g = [tube(pts, .0035, 200, 6)];
+  for (const sx of [-.1, -.05, 0, .05, .1]) g.push(cylY(.0018, .09, .39, 6).translate(sx, 0, -.184));
+  addMesh(p, mergeGeos(g), MAT.dark());
+}
+{
+  const p = makePart('compressor', 'Fridge motor', 'The fridge’s motor, called a compressor. It hums and pumps cold through the pipes. Motors like steady electricity.', fridge, 'prop');
+  compShake = new THREE.Group(); compShake.position.set(.06, .012, -.255); p.group.add(compShake);
+  addMesh(p, latheY([[0, 0], [.04, 0], [.046, .01], [.046, .055], [.04, .075], [.024, .086], [0, .089]], 48), MAT.dark(), { parent: compShake });
+  addMesh(p, roundedBox(.022, .026, .018, .004).translate(-.048, .04, .004), MAT.grey(), { parent: compShake });
+  addMesh(p, tube([new V3(.0, .085, 0), new V3(0, .12, .02), new V3(-.04, .12, .07), new V3(-.07, .1, .074)], .003, 30, 6), new THREE.MeshStandardMaterial({ color: 0xc27a3e, metalness: .85, roughness: .32 }), { parent: compShake });
+  addMesh(p, mergeGeos([cylY(.008, -.012, 0, 12).translate(.03, 0, .03), cylY(.008, -.012, 0, 12).translate(-.03, 0, .03), cylY(.008, -.012, 0, 12).translate(0, 0, -.035)]), MAT.rubber(), { parent: compShake });
+}
+
+/* ---------------------------------------------------------------- explode layout: parts slide out from the wall */
+scene.updateMatrixWorld(true);
+const STACK = ['pins', 'backCover', 'contacts', 'board', 'fuse', 'mov', 'led', 'frontCover', 'fridgePlug'];
+let spanMin = 0, spanMax = 0;
+{
+  const boxes = STACK.map(id => new THREE.Box3().setFromObject(parts[id].group));
+  let hi = .03;
+  STACK.forEach((id, i) => {
+    const p = parts[id], b = boxes[i], lo = hi + (i ? .016 : 0);
+    p.dist = lo - b.min.z; hi = lo + (b.max.z - b.min.z);
+    if (i === 0) spanMin = lo;
+    p.rank = i / (STACK.length - 1);
+    p.side = i % 2 ? 'down' : 'up'; p.stem = Math.floor(i / 2) % 2 ? 50 : 16;
+    const c = b.getCenter(new V3());
+    p.anchor.copy(p.group.worldToLocal(new V3(c.x, p.side === 'up' ? b.max.y : b.min.y, c.z)));
+  });
+  spanMax = hi;
+}
+for (const p of partList) p.base.copy(p.group.position);
+
+/* ---------------------------------------------------------------- point flows: steady power and surges */
+const pointVS = `attribute float aAlpha; attribute float aSize; varying float vA; uniform float uScale;
+  void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = max(1.0, aSize * uScale / -mv.z); }`;
+const pointFS = `uniform vec3 uColor; uniform float uCore; varying float vA;
+  void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = (1.0 - smoothstep(0.3, 1.0, d)) * vA; if (a < 0.01) discard;
+  vec3 c = mix(uColor, vec3(1.0), uCore * (1.0 - smoothstep(0.0, 0.5, d))); gl_FragColor = vec4(c, a); }`;
+const pointMats = [];
+function pointsMat(token){
+  const mat = new THREE.ShaderMaterial({ uniforms: { uColor: { value: new THREE.Color() }, uScale: { value: 600 }, uCore: { value: .5 } }, vertexShader: pointVS, fragmentShader: pointFS, transparent: true, depthWrite: false, depthTest: false });
+  mat.userData.token = token; pointMats.push(mat); return mat;
+}
+function makeFlow(paths, n, size, speed, token, fadeIn = 4){
+  const mat = pointsMat(token);
+  const pos = new Float32Array(n * 3), alpha = new Float32Array(n), sz = new Float32Array(n);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1)); g.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+  const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.renderOrder = 10; scene.add(pts);
+  const lens = paths.map(c => c.getLength()), u = new Float32Array(n), which = new Uint8Array(n);
+  for (let i = 0; i < n; i++){ which[i] = i % paths.length; u[i] = Math.random(); }
+  return { vis: 0, update(dt, on){
+    this.vis += ((on ? 1 : 0) - this.vis) * Math.min(1, dt * fadeIn);
+    pts.visible = this.vis > .01; if (!pts.visible) return;
+    for (let i = 0; i < n; i++){
+      u[i] += dt * speed / lens[which[i]]; if (u[i] > 1) u[i] -= 1;
+      const q = paths[which[i]].getPointAt(u[i]);
+      pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z;
+      alpha[i] = this.vis * .95 * smooth(0, .04, u[i]) * (1 - smooth(.94, 1, u[i])); sz[i] = size;
+    }
+    g.attributes.position.needsUpdate = true; g.attributes.aAlpha.needsUpdate = true; g.attributes.aSize.needsUpdate = true;
+  } };
+}
+function polyPath(points, tail){
+  const cp = new THREE.CurvePath();
+  for (let i = 1; i < points.length; i++) cp.add(new THREE.LineCurve3(points[i - 1], points[i]));
+  if (tail) cp.add(tail);
+  return cp;
+}
+const L = P16.L, E = P16.E;
+const compressorTop = () => new V3(FX + .06 * FK, .075 * FK, FZ - .255 * FK);
+const feedPath = polyPath([A(L.x, L.y, -.03), A(L.x, L.y, .004), A(L.x, L.y, .034), A(L.x, L.y, .045), A(.004, -.03, .058), A(0, -.054, .059)],
+  new THREE.CatmullRomCurve3(cordCurve.getPoints(40).concat([new V3(FX + .04 * FK, .06 * FK, FZ - .25 * FK), compressorTop()])));
+const earthPath = polyPath([A(L.x, L.y, -.03), A(L.x, L.y, .018), A(L.x, 0, .018), A(.01, .008, .02), A(.006, .0125, .0237), A(FUSEP.x + .0045, FUSEP.y, FUSEP.z),
+  A(FUSEP.x - .0045, FUSEP.y, FUSEP.z), A(MOVP.x, MOVP.y, MOVP.z1), A(MOVP.x - .002, MOVP.y - .006, .0262), A(-.006, .006, .0237), A(-.003, .003, .02), A(E.x, 0, .018), A(E.x, E.y, .018), A(E.x, E.y, -.035)]);
+const feedFlow = makeFlow([feedPath], 60, .0022, .14, '--volt');
+const surgeFeedFlow = makeFlow([feedPath], 80, .0034, .42, '--stop', 7);
+const surgeEarthFlow = makeFlow([earthPath], 34, .0026, .06, '--stop', 7);
+
+// sparks when an unprotected surge hits the motor
+const SPARK_N = 70;
+const spark = { p: new Float32Array(SPARK_N * 3), v: new Float32Array(SPARK_N * 3), life: new Float32Array(SPARK_N), max: new Float32Array(SPARK_N) };
+const sparkGeo = new THREE.BufferGeometry();
+sparkGeo.setAttribute('position', new THREE.BufferAttribute(spark.p, 3));
+sparkGeo.setAttribute('aAlpha', new THREE.BufferAttribute(new Float32Array(SPARK_N), 1));
+sparkGeo.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(SPARK_N).fill(.006), 1));
+const sparkPts = new THREE.Points(sparkGeo, pointsMat('--volt')); sparkPts.frustumCulled = false; sparkPts.renderOrder = 11; scene.add(sparkPts);
+sparkPts.material.uniforms.uCore.value = .8;
+function emitSparks(){
+  const o = compressorTop();
+  for (let i = 0; i < SPARK_N; i++){
+    spark.p[i * 3] = o.x; spark.p[i * 3 + 1] = o.y; spark.p[i * 3 + 2] = o.z;
+    const a = rand(0, TAU), up = rand(1.1, 2.1), s = rand(.2, .6);
+    spark.v[i * 3] = Math.cos(a) * s; spark.v[i * 3 + 1] = up; spark.v[i * 3 + 2] = Math.sin(a) * s;
+    spark.max[i] = spark.life[i] = rand(.35, .9) * (i < SPARK_N / 2 ? 1 : 1.4);
+  }
+}
+function updateSparks(dt){
+  const al = sparkGeo.attributes.aAlpha.array; let any = false;
+  for (let i = 0; i < SPARK_N; i++){
+    if (spark.life[i] <= 0){ al[i] = 0; continue; }
+    any = true; spark.life[i] -= dt;
+    spark.v[i * 3 + 1] -= 3.2 * dt;
+    for (let k = 0; k < 3; k++) spark.p[i * 3 + k] += spark.v[i * 3 + k] * dt;
+    if (spark.p[i * 3 + 1] < .003){ spark.p[i * 3 + 1] = .003; spark.v[i * 3 + 1] *= -.35; }
+    al[i] = clamp(spark.life[i] / spark.max[i], 0, 1);
+  }
+  sparkPts.visible = any;
+  sparkGeo.attributes.position.needsUpdate = true; sparkGeo.attributes.aAlpha.needsUpdate = true;
+}
+
+/* ---------------------------------------------------------------- state */
+const S = { explode: false, ep: 0, xray: false, xr: 0, step: 0, hovered: null, stepHL: new Set(),
+  power: true, protect: true, surgeT: -1, ouch: 0, run: 1, light: 1, wallV: 230, fridgeV: 230, auto: null, autoT: 0 };
+const SURGE_LEN = 2.4;
+function surgeEnv(){
+  const t = S.surgeT; if (t < 0) return 0;
+  return t < .15 ? t / .15 : Math.exp(-(t - .15) * 2.1);
+}
+function triggerSurge(){ if (!S.power) return; S.surgeT = 0; S.ouchArmed = !S.protect; if (S.protect) S.ouch = 0; }
+
+/* ---------------------------------------------------------------- theme tokens -> 3D colours */
+const HL = new THREE.Color(0xffb02e);
+let tealCol = new THREE.Color('#1a9e8f'), stopCol = new THREE.Color('#d23c5a');
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const m of pointMats) m.uniforms.uColor.value.set(cs.getPropertyValue(m.userData.token).trim() || '#1f73b2');
+  tealCol = new THREE.Color(cs.getPropertyValue('--teal').trim() || '#1a9e8f');
+  stopCol = new THREE.Color(cs.getPropertyValue('--stop').trim() || '#d23c5a');
+  const sh = parseFloat(cs.getPropertyValue('--shadow')) || .24;
+  floorMat.opacity = sh; wallMat.opacity = sh * .55;
+}
+readTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+/* ---------------------------------------------------------------- explode labels */
+const labelLayer = $('#labels');
+for (const p of partList){
+  if (p.row !== 'adaptor') continue;
+  const el = document.createElement('div');
+  el.className = 'lbl' + (p.side === 'down' ? ' down' : '');
+  el.style.setProperty('--stem', p.stem + 'px');
+  el.innerHTML = '<span class="lbl-pin"></span><span class="lbl-stem"></span><span class="lbl-name"></span>';
+  el.querySelector('.lbl-name').textContent = p.name;
+  labelLayer.appendChild(el); p.labelEl = el;
+}
+const projV = new V3();
+let W = 1, Hh = 1;
+function updateLabels(){
+  const vis = smooth(.72, 1, S.ep);
+  for (const p of partList){
+    const el = p.labelEl; if (!el) continue;
+    if (vis < .01){ if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'; continue; }
+    projV.copy(p.anchor); p.group.localToWorld(projV); projV.project(camera);
+    if (projV.z > 1){ el.style.visibility = 'hidden'; continue; }
+    const x = (projV.x * .5 + .5) * W, y = (-projV.y * .5 + .5) * Hh;
+    el.style.visibility = 'visible'; el.style.opacity = vis.toFixed(3);
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(-50%, ${p.side === 'down' ? '-3px' : 'calc(-100% + 3px)'})`;
+    el.classList.toggle('hot', S.hovered === p);
+  }
+}
+
+/* ---------------------------------------------------------------- camera framing */
+const mast = $('#mast'), hud = $('#hud'), guide = $('#guide'), dock = $('#dock');
+let insets = { left: 0, right: 0, top: 0, bottom: 0 };
+function computeInsets(){
+  const app = $('#app').getBoundingClientRect(), narrow = app.width <= 760;
+  const m = mast.getBoundingClientRect(), h = hud.getBoundingClientRect(), g = guide.getBoundingClientRect(), d = dock.getBoundingClientRect();
+  if (narrow) insets = { left: 0, right: 0, top: m.bottom - app.top + 4, bottom: app.bottom - h.top + 6 };
+  else insets = { left: 0, right: guide.classList.contains('collapsed') ? 0 : app.right - g.left + 8, top: (m.bottom - app.top) * .5, bottom: (app.bottom - d.top) * .7 };
+}
+function resize(){
+  const r = $('#app').getBoundingClientRect();
+  W = Math.max(1, r.width); Hh = Math.max(1, r.height);
+  renderer.setSize(W, Hh, false);
+  camera.aspect = W / Hh;
+  computeInsets();
+  camera.setViewOffset(W, Hh, (insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2, W, Hh);
+  camera.updateProjectionMatrix();
+  const scale = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+  for (const m of pointMats) m.uniforms.uScale.value = scale;
+}
+const VIEWS = {
+  overview: { t: [.21, .17, .15], d: [-.3, .28, 1], w: .66, h: .4 },
+  wall: { t: [SOCK.x + .01, SOCK.y + .002, .04], d: [-.35, .22, 1], w: .16, h: .17 },
+  inside: { t: [ADP.x, ADP.y - .002, .03], d: [-.32, .18, 1], w: .085, h: .11 },
+  mov: { t: [ADP.x - .004, ADP.y + .008, .03], d: [-.22, .25, 1], w: .1, h: .085 },
+  led: { t: [ADP.x + .006, ADP.y + .022, .045], d: [-.3, .2, 1], w: .11, h: .095 },
+  motor: { t: [FX + .04 * FK, .07, FZ - .2 * FK], d: [1, .55, -.05], w: .36, h: .24 },
+  motorWide: { t: [.22, .15, .15], d: [-.25, .32, 1], w: .7, h: .4 }
+};
+function explodeView(){ return { t: [ADP.x, ADP.y - .004, (spanMin + spanMax) / 2], d: [1, .38, .62], w: (spanMax - spanMin) * 1.02, h: .15 }; }
+function viewPose(v){
+  const fov = camera.fov * Math.PI / 180, tn = 2 * Math.tan(fov / 2);
+  const fw = Math.max(120, W - insets.left - insets.right), fh = Math.max(120, Hh - insets.top - insets.bottom);
+  const dist = Math.max(v.h * Hh / (fh * tn), v.w * Hh / (fw * tn)) * 1.08;
+  const t = new V3(...v.t), dir = new V3(...v.d).normalize();
+  return { t, p: t.clone().addScaledVector(dir, dist) };
+}
+let tween = null;
+function flyTo(v, dur = 1.15){
+  const to = viewPose(v);
+  if (reduceMotion){ camera.position.copy(to.p); controls.target.copy(to.t); controls.update(); tween = null; return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), to, t: 0, dur };
+}
+let dragging = false;
+controls.addEventListener('start', () => { tween = null; dragging = true; hideTip(); });
+controls.addEventListener('end', () => { dragging = false; });
+
+/* ---------------------------------------------------------------- walkthrough */
+const STEPS = [
+  { title: 'Hello, plug!', view: 'overview', power: true, hl: [],
+    body: 'This red plug is a surge protector. It sits between the wall socket and the fridge, and it keeps the fridge’s motor safe when the electricity goes wobbly. Let’s find out how it works. Press Next to start.',
+    spec: 'Look at the numbers at the top. They show how much electricity the wall sends and how much reaches the fridge.' },
+  { title: 'Electricity from the wall', view: 'wall', power: true, hl: ['wallSocket', 'pins'],
+    body: 'Electricity travels from the power station along long wires, all the way to the socket in your wall. The surge protector’s three metal pins push into the socket so the electricity can flow in. Plugs and wall sockets are only for grown-ups to touch.',
+    spec: 'Watch the orange dots flow out of the wall, through the plug and along the cord to the fridge.' },
+  { title: 'Brass roads inside', view: 'inside', xray: true, power: true, hl: ['contacts'],
+    body: 'Inside the plug are shiny brass strips. They are like little roads that carry the electricity from the pins at the back to the holes at the front. The fridge’s plug pushes into those holes.',
+    spec: 'Press Explode to pull the surge protector apart and see every piece.' },
+  { title: 'The fridge’s motor', view: 'motor', power: true, hl: ['compressor'],
+    body: 'At the back of the fridge is a motor called a compressor. It hums and pumps cold through the pipes to keep your food cold. Motors like their electricity nice and steady, the same amount all the time.',
+    spec: 'Watch the motor wobble a little as it hums. That means it is working.' },
+  { title: 'Loadshedding!', view: 'overview', power: false, hl: [],
+    body: 'During loadshedding, Eskom switches the electricity off. Everything goes quiet and the fridge’s motor stops. When the power comes back on, it can rush back too fast, all at once. That big rush is called a surge, like a wave splashing over the side of the pool.',
+    spec: 'Press Loadshedding at the bottom to turn the power back on, and watch the pink zap.' },
+  { title: 'The surge catcher', view: 'mov', xray: true, power: true, auto: 'surge', hl: ['mov'],
+    body: 'This blue disc is the surge catcher. Its grown-up name is an MOV. When the electricity is normal, it does nothing. When a surge rushes in, it opens a side door and sends the extra electricity away through the earth pin, into the ground. Only the right amount goes on to the fridge.',
+    spec: 'Watch the pink dots go into the blue disc and out through the top pin. Press Loadshedding twice to see it again.' },
+  { title: 'The brave little fuse', view: 'mov', xray: true, power: true, hl: ['fuse'],
+    body: 'Next to the surge catcher is a tiny fuse. If a giant zap comes, like lightning, the fuse breaks on purpose to stop it. After that the surge protector can’t guard anymore, and a grown-up needs to get a new one.',
+    spec: 'Tap or hover over the little silver tube next to the blue disc.' },
+  { title: 'The guard light', view: 'led', power: true, hl: ['led'],
+    body: 'The little light on the front means the surge protector is on guard. If the light stays off while the power is on, the fuse has done its job and it is time for a new surge protector.',
+    spec: 'Press Loadshedding and watch the light go out. It comes back on with the power.' },
+  { title: 'Without a protector', view: 'motorWide', power: true, protect: false, auto: 'surge', hl: ['compressor'],
+    body: 'Now the surge protector is switched off, like a plain adaptor. When the surge comes, it rushes straight into the fridge’s motor. Ouch! Big surges can break motors for real. That is why families use surge protectors when there is loadshedding.',
+    spec: 'Press Protector to switch it back on, then press Loadshedding twice to see the difference.' }
+];
+const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
+for (let i = 1; i < STEPS.length; i++){
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('aria-label', `Step ${i}: ${STEPS[i].title}`); b.addEventListener('click', () => goStep(i));
+  li.appendChild(b); gDots.appendChild(li);
+}
+function goStep(i){
+  const s = STEPS[i]; S.step = i;
+  gTitle.textContent = s.title; gBody.textContent = s.body; gSpec.textContent = s.spec;
+  gCount.textContent = i === 0 ? 'Overview' : `Step ${i} of ${STEPS.length - 1}`;
+  gPrev.disabled = i === 0;
+  gNext.textContent = i === 0 ? 'Start' : (i === STEPS.length - 1 ? 'Finish' : 'Next');
+  [...gDots.querySelectorAll('button')].forEach((b, k) => { const n = k + 1; b.classList.toggle('done', n < i); if (n === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  if (S.explode) setExplode(false, false);
+  setProtect(s.protect !== false);
+  if (s.power !== undefined) setPower(s.power, false);
+  setXray(!!s.xray);
+  S.auto = s.auto || null; S.autoT = 1.6; S.ouch = 0; S.ouchArmed = false;
+  S.stepHL = new Set(s.hl);
+  flyTo(VIEWS[s.view]);
+}
+gPrev.addEventListener('click', () => goStep(Math.max(0, S.step - 1)));
+gNext.addEventListener('click', () => goStep(S.step >= STEPS.length - 1 ? 0 : S.step + 1));
+
+/* ---------------------------------------------------------------- controls */
+const btnPower = $('#btn-power'), btnProtect = $('#btn-protect'), btnX = $('#btn-xray'), btnE = $('#btn-explode');
+function setPower(on, withSurge = true){
+  const was = S.power; S.power = on;
+  btnPower.setAttribute('aria-pressed', String(!on));
+  if (!on){ S.surgeT = -1; S.auto = null; }
+  else if (!was && withSurge) triggerSurge();
+}
+function setProtect(on){ S.protect = on; btnProtect.setAttribute('aria-pressed', String(on)); }
+function setXray(on){ S.xray = on; btnX.setAttribute('aria-pressed', String(on)); }
+function setExplode(on, fly = true){
+  S.explode = on; btnE.setAttribute('aria-pressed', String(on)); btnE.textContent = on ? 'Reassemble' : 'Explode';
+  if (on){ if (fly) flyTo(explodeView(), 1.3); }
+  else if (fly) flyTo(VIEWS[STEPS[S.step].view], .7);
+}
+btnPower.addEventListener('click', () => { if (S.explode) setExplode(false); setPower(!S.power); });
+btnProtect.addEventListener('click', () => setProtect(!S.protect));
+btnX.addEventListener('click', () => setXray(!S.xray));
+btnE.addEventListener('click', () => setExplode(!S.explode));
+$('#btn-reset').addEventListener('click', () => flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view]));
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight' && S.step < STEPS.length - 1) goStep(S.step + 1);
+  else if (e.key === 'ArrowLeft' && S.step > 0) goStep(S.step - 1);
+});
+if (coarse) $('#hint').textContent = 'Drag to orbit, pinch to zoom, tap any part to see what it does.';
+
+/* ---------------------------------------------------------------- hover / tap picking */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickables = partList.flatMap(p => p.meshes);
+const tip = $('#tip'), tipName = $('#tip-name'), tipDesc = $('#tip-desc');
+let pointer = null, needPick = false, downAt = null;
+function pick(cx, cy){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  const xr = S.xr > .5 && S.ep < .05;
+  let shell = null;
+  for (const h of hits){ const u = h.object.userData; if (u.shell && xr){ if (!shell) shell = u.part; continue; } return u.part; }
+  return shell;
+}
+function showTip(p, cx, cy){
+  if (!p){ hideTip(); return; }
+  tipName.textContent = p.name; tipDesc.textContent = p.desc; tip.hidden = false;
+  const r = $('#app').getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = cx - r.left + 16, y = cy - r.top + 18;
+  if (x + tw > r.width - 12) x = cx - r.left - tw - 14;
+  if (y + th > r.height - 12) y = cy - r.top - th - 14;
+  tip.style.transform = `translate(${Math.max(12, x)}px, ${Math.max(12, y)}px)`;
+}
+function hideTip(){ tip.hidden = true; S.hovered = null; canvas.classList.remove('pick'); }
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pointer = { x: e.clientX, y: e.clientY }; needPick = true; });
+canvas.addEventListener('pointerleave', () => { pointer = null; hideTip(); });
+canvas.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !downAt) return;
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8 && performance.now() - downAt.t < 450){ const p = pick(e.clientX, e.clientY); S.hovered = p; showTip(p, e.clientX, e.clientY); }
+});
+
+/* ---------------------------------------------------------------- readout */
+const roWall = $('#ro-wall'), roFridge = $('#ro-fridge'), roState = $('#ro-state');
+let roT = 0;
+function fridgeMood(){
+  if (!S.power) return 'sleep';
+  if (S.ouch > 0) return 'ouch';
+  return 'happy';
+}
+function updateReadout(){
+  roWall.textContent = Math.round(S.wallV).toLocaleString('en-US') + ' V';
+  roFridge.textContent = Math.round(S.fridgeV).toLocaleString('en-US') + ' V';
+  roWall.classList.toggle('hot', S.wallV > 300); roFridge.classList.toggle('hot', S.fridgeV > 300);
+  roState.textContent = S.explode ? 'Waiting' : !S.power ? 'Sleeping (loadshedding)' : S.ouch > 0 ? 'Ouch!' : (S.surgeT >= 0 && S.protect && S.surgeT < 1.6) ? 'Safe, phew!' : 'Humming';
+}
+
+/* ---------------------------------------------------------------- frame update */
+function applyHighlight(p, k){
+  for (const m of p.mats){ m.color.copy(m.userData.base).lerp(HL, .5 * k); if (m.emissive && m !== ledMat && m !== movMat) m.emissive.copy(HL).multiplyScalar(.3 * k); }
+}
+const tmpW = new V3();
+function update(dt, t){
+  const hold = S.explode || S.ep > .001;
+
+  // step demos (a surge a moment after arriving)
+  if (S.auto && !hold){ S.autoT -= dt; if (S.autoT <= 0){ if (S.auto === 'surge' && S.power) triggerSurge(); S.auto = null; } }
+
+  // surge timeline
+  if (S.surgeT >= 0){
+    S.surgeT += dt;
+    if (S.ouchArmed && S.surgeT > .35){ S.ouchArmed = false; S.ouch = 2.8; emitSparks(); }
+    if (S.surgeT > SURGE_LEN) S.surgeT = -1;
+  }
+  S.ouch = Math.max(0, S.ouch - dt);
+  const env = surgeEnv();
+  const jitter = Math.sin(t * 7.3) * 1.2 + Math.sin(t * 2.1) * .8;
+  S.wallV = S.power ? 230 + jitter + 1400 * env : 0;
+  S.fridgeV = !S.power ? 0 : S.protect ? 230 + jitter + Math.min(1400 * env, 42 * Math.min(1, env * 6)) : S.wallV;
+
+  // room light dims during loadshedding
+  S.light += ((S.power ? 1 : .55) - S.light) * Math.min(1, dt * 3);
+  hemi.intensity = LIGHT_BASE.hemi * S.light; key.intensity = LIGHT_BASE.key * S.light; rimLight.intensity = LIGHT_BASE.rim * S.light;
+
+  // fridge: motor hums while powered, stops when off or hurt
+  const running = S.power && S.ouch <= 0;
+  S.run += ((running ? 1 : 0) - S.run) * Math.min(1, dt * 4);
+  compShake.position.x = .06 + Math.sin(t * 71) * .0007 * S.run;
+  compShake.position.z = -.255 + Math.cos(t * 53) * .0005 * S.run;
+  const hurt = S.ouch > 0 ? Math.min(1, S.ouch) : 0;
+  fridge.position.x = FX + Math.sin(t * 46) * .008 * hurt;
+  fridge.position.y = Math.abs(Math.sin(t * 31)) * .006 * hurt;
+  fridge.rotation.z = Math.sin(t * 38) * .035 * hurt;
+  drawFace(fridgeMood());
+
+  // guard light and surge catcher glow
+  const guarding = S.power && S.protect && !S.explode;
+  if (guarding) ledMat.emissive.copy(tealCol).multiplyScalar(2.2); else ledMat.emissive.setRGB(0, 0, 0);
+  ledGlow.visible = guarding; ledGlow.material.color.copy(tealCol);
+  movMat.emissive.copy(stopCol).multiplyScalar(S.protect ? env * 1.6 : 0);
+
+  // explode: parts slide straight out from the wall
+  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
+  for (const p of partList){
+    if (p.row !== 'adaptor') continue;
+    const local = clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1);
+    p.group.position.z = p.base.z + easeIO(local) * p.dist;
+  }
+
+  // x-ray shells
+  const xT = (S.xray && S.ep < .02) ? 1 : 0;
+  S.xr += (xT - S.xr) * Math.min(1, dt * 6);
+  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .9 * S.xr); m.depthWrite = S.xr < .25; }
+
+  // highlights
+  const pulseK = .36 + .26 * Math.sin(t * 3.4);
+  for (const p of partList){
+    const tg = S.hovered === p ? 1 : (S.stepHL.has(p.id) && S.ep < .02 ? pulseK : 0);
+    let nh = p.hl + (tg - p.hl) * Math.min(1, dt * 12);
+    if (tg === 0 && nh < .004) nh = 0;
+    if (nh !== p.hl){ p.hl = nh; applyHighlight(p, nh); }
+  }
+
+  // flows
+  const surging = S.surgeT >= 0 && S.surgeT < 1.5 && S.power && !hold;
+  feedFlow.update(dt, S.power && !hold);
+  surgeEarthFlow.update(dt, surging && S.protect);
+  surgeFeedFlow.update(dt, surging && !S.protect);
+  updateSparks(dt);
+
+  // camera tween
+  if (tween){
+    tween.t += dt; const k = easeIO(clamp(tween.t / tween.dur, 0, 1));
+    camera.position.lerpVectors(tween.p0, tween.to.p, k);
+    controls.target.lerpVectors(tween.t0, tween.to.t, k);
+    if (k >= 1) tween = null;
+  }
+
+  if (needPick && pointer && !dragging){
+    needPick = false;
+    const p = pick(pointer.x, pointer.y);
+    S.hovered = p; canvas.classList.toggle('pick', !!p);
+    if (p) showTip(p, pointer.x, pointer.y); else tip.hidden = true;
+  }
+  roT += dt; if (roT > .1){ roT = 0; updateReadout(); }
+}
+
+/* ---------------------------------------------------------------- go */
+resize();
+window.addEventListener('resize', resize);
+if ('ResizeObserver' in window) new ResizeObserver(() => resize()).observe(guide);
+/* ---------------------------------------------------------------- fold the walkthrough card */
+{
+  const tgl = $('#g-toggle'), foldTxt = $('#g-fold-txt');
+  let downY = null, swiped = false;
+  function setCollapsed(on){
+    if (guide.classList.contains('collapsed') === on) return;
+    guide.classList.toggle('collapsed', on);
+    tgl.setAttribute('aria-expanded', String(!on));
+    tgl.title = on ? 'Tap or swipe up to show' : 'Tap or swipe down to hide';
+    foldTxt.textContent = on ? 'Show' : 'Hide';
+    resize();
+    flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view], .8);
+  }
+  tgl.addEventListener('click', () => { if (swiped){ swiped = false; return; } setCollapsed(!guide.classList.contains('collapsed')); });
+  tgl.addEventListener('pointerdown', e => { downY = e.clientY; swiped = false; });
+  tgl.addEventListener('pointerup', e => {
+    if (downY === null) return;
+    const dy = e.clientY - downY; downY = null;
+    if (dy > 30){ swiped = true; setCollapsed(true); }
+    else if (dy < -30){ swiped = true; setCollapsed(false); }
+  });
+  tgl.addEventListener('pointercancel', () => { downY = null; });
+}
+goStep(0);
+resize();
+{ const v = viewPose(VIEWS.overview); camera.position.copy(v.p); controls.target.copy(v.t); tween = null; controls.update(); }
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt, now / 1000);
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
