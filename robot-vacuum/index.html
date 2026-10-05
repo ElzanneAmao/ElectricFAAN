@@ -1,0 +1,1157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9e0e4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Inside a Robot Vacuum">
+<meta property="og:description" content="Interactive 3D pink robot vacuum: watch it clean, take it apart, and learn how it works step by step.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A4%96%3C/text%3E%3C/svg%3E">
+<title>Inside a Robot Vacuum</title>
+<meta name="description" content="Interactive 3D pink robot vacuum for little ones: watch it clean, take it apart, and learn how it works step by step.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..600&display=swap">
+<style>
+/* Layout: a full-bleed 3D stage with the robot roaming a play rug. The title sits on the stage top-left like a rating plate,
+   the robot's own controls dock bottom-left, and the walkthrough is the one card (bottom-right; stacked under the stage on phones). */
+:root{
+  --bg:#d9e0e4; --bg-hi:#eff3f4; --ink:#14212a; --muted:#52616b; --line:rgba(20,33,42,.14);
+  --panel:rgba(248,250,250,.88); --panel-solid:#f8fafa; --glass:rgba(20,33,42,.10);
+  --volt:#c4780f; --air:#1f73b2; --lamp:#b6c0c6; --teal:#1a9e8f;
+  --primary:#14212a; --on-primary:#f2f5f6; --shadow:.24; --pink:#b2306b; --pink-soft:rgba(178,48,107,.12);
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+    --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+    --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0;
+    --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+  --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+  --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0;
+  --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{
+  margin:0; overflow:hidden; color:var(--ink); font-family:var(--f-body); font-size:15px;
+  background-color:var(--bg);
+  background-image:radial-gradient(120% 85% at 38% 22%, var(--bg-hi), var(--bg) 72%);
+}
+.app{position:relative; height:100%; overflow:hidden}
+#stage{position:absolute; inset:0; width:100%; height:100%; display:block; outline:none; cursor:grab}
+#stage.pick{cursor:pointer}
+#stage:active{cursor:grabbing}
+
+.masthead{position:absolute; top:22px; left:24px; max-width:min(440px, calc(100% - 48px)); pointer-events:none; display:grid; gap:8px}
+.plate{justify-self:start; margin:0; font:500 11px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:5px 8px}
+h1{margin:0; font-family:var(--f-display); font-weight:780; font-stretch:125%; font-size:clamp(1.45rem, 2.5vw, 2.3rem); line-height:1.02; letter-spacing:-.012em; text-wrap:balance}
+.hint{margin:0; color:var(--muted); font-size:.92rem; line-height:1.45; max-width:42ch}
+.readout{display:flex; flex-wrap:wrap; gap:6px 20px; margin:4px 0 0}
+.readout div{display:grid; gap:2px}
+.readout dt{font:500 10px/1 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.readout dd{margin:0; font:500 13.5px/1.2 var(--f-mono); font-variant-numeric:tabular-nums}
+.meter{display:inline-block; width:34px; height:9px; margin-right:7px; vertical-align:0; border:1px solid var(--muted); border-radius:2px; position:relative}
+.meter i{position:absolute; left:1px; top:1px; bottom:1px; width:0; background:var(--teal); border-radius:1px}
+.meter.low i{background:var(--volt)}
+
+.hud{position:absolute; left:20px; right:20px; bottom:20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; pointer-events:none}
+.hud > *{pointer-events:auto}
+.dock{display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0}
+.btn{
+  height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap;
+  font:500 14px/1 var(--f-body); color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.btn:hover{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.lamp{width:8px; height:8px; border-radius:50%; background:var(--lamp); transition:background-color .2s, box-shadow .2s}
+.btn[aria-pressed="true"] .lamp{background:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent)}
+.btn.primary{background:var(--primary); color:var(--on-primary); border-color:var(--primary); font-family:var(--f-display); font-weight:680; font-stretch:115%; letter-spacing:.01em; padding:0 18px}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.plain-btn{background:transparent; border-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; color:var(--muted); padding:0 8px}
+.btn.plain-btn:hover{color:var(--ink)}
+button:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+.guide{
+  width:348px; flex:none; box-sizing:border-box; padding:18px 20px 16px; display:grid; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 32px var(--glass);
+}
+.guide-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+.eyebrow{font:500 10.5px/1 var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.count{font:500 11px/1 var(--f-mono); color:var(--muted); font-variant-numeric:tabular-nums}
+.guide h2{margin:0; font-family:var(--f-display); font-weight:720; font-stretch:112%; font-size:1.22rem; line-height:1.15; text-wrap:balance}
+.guide-body{margin:0; font-size:1.02rem; line-height:1.6; min-width:0}
+.spec{margin:0; padding-top:10px; border-top:1px dashed var(--line); font-size:.92rem; line-height:1.5; color:var(--ink)}
+.try{display:inline-block; margin-right:8px; padding:3px 7px; border-radius:4px; font:500 10px/1.2 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--pink); background:var(--pink-soft); vertical-align:1px}
+.guide-nav{display:flex; align-items:center; gap:10px; margin-top:4px}
+.dots{display:flex; gap:4px; list-style:none; margin:0; padding:0; flex:1; justify-content:center}
+.dots button{width:16px; height:16px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center}
+.dots button::before{content:""; width:14px; height:4px; border-radius:2px; background:var(--line); transition:background-color .2s}
+.dots button.done::before{background:color-mix(in srgb, var(--ink) 35%, transparent)}
+.dots button[aria-current="step"]::before{background:var(--pink)}
+.nav-btn{height:34px; padding:0 12px; font:500 13.5px/1 var(--f-body); cursor:pointer; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:7px; white-space:nowrap}
+.nav-btn:disabled{opacity:.4; cursor:default}
+.nav-btn.next{background:var(--primary); color:var(--on-primary); border-color:var(--primary)}
+
+.tip{
+  position:absolute; left:0; top:0; z-index:5; max-width:280px; pointer-events:none; padding:9px 11px 10px;
+  background:var(--panel-solid); border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px var(--glass);
+  display:grid; gap:3px; font-size:13px; line-height:1.4;
+}
+.tip b{font-family:var(--f-display); font-weight:700; font-stretch:112%; font-size:13.5px; color:var(--ink)}
+.tip span{color:var(--muted)}
+
+.labels{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+.lbl{position:absolute; left:0; top:0; display:flex; align-items:center; will-change:transform; visibility:hidden}
+.lbl.right{flex-direction:row}
+.lbl.left{flex-direction:row-reverse}
+.lbl-pin{width:6px; height:6px; border-radius:50%; background:var(--pink); box-shadow:0 0 0 2px var(--panel-solid); flex:none}
+.lbl-stem{height:1px; width:var(--stem, 24px); background:var(--ink); opacity:.4; flex:none}
+.lbl-name{
+  font:640 11.5px/1.15 var(--f-display); font-stretch:110%; white-space:nowrap; color:var(--ink);
+  padding:4px 7px; border-radius:4px; background:var(--panel-solid); border:1px solid var(--line); box-shadow:0 2px 8px var(--glass);
+}
+.lbl.hot .lbl-name{border-color:var(--pink); box-shadow:0 0 0 2px var(--pink-soft)}
+
+.fail{position:absolute; inset:0; display:grid; place-items:center; padding-inline:24px}
+.fail div{max-width:420px; background:var(--panel-solid); border:1px solid var(--line); border-radius:12px; padding:20px 22px}
+.fail h2{margin:0 0 6px; font-family:var(--f-display); font-stretch:112%}
+.fail p{margin:0; color:var(--muted); line-height:1.5}
+
+@media (max-width: 760px){
+  .masthead{top:14px; left:16px; right:16px; max-width:none; gap:6px}
+  h1{font-size:1.3rem}
+  .hint{display:none}
+  .readout dd{font-size:12.5px}
+  .hud{left:12px; right:12px; bottom:12px; flex-direction:column; align-items:stretch; gap:8px}
+  .dock{gap:6px}
+  .btn{height:36px; padding:0 11px; font-size:13px}
+  .btn.primary{padding:0 14px}
+  .guide{width:auto; padding:14px 16px 12px; gap:8px}
+  .guide h2{font-size:1.08rem}
+  .guide-body{font-size:.95rem; max-height:22vh; overflow-y:auto}
+}
+@media (prefers-reduced-motion: reduce){ .lamp,.dots button::before{transition:none} }
+</style>
+<style>
+/* Back-to-menu link */
+.back{pointer-events:auto; justify-self:start; display:inline-flex; align-items:center; gap:6px; margin:-6px 0 0 -8px; padding:6px 8px; border-radius:6px;
+  font:500 11.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.back:hover{background:var(--glass)}
+.back:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+/* Mobile additions for the standalone site */
+html,body{height:100%; height:100dvh}
+body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
+.app{height:100dvh}
+#stage{touch-action:none}
+.masthead{top:calc(22px + env(safe-area-inset-top)); left:calc(24px + env(safe-area-inset-left))}
+.hud{bottom:calc(20px + env(safe-area-inset-bottom)); left:calc(20px + env(safe-area-inset-left)); right:calc(20px + env(safe-area-inset-right))}
+@media (max-width: 760px){
+  .masthead{top:calc(12px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); right:calc(14px + env(safe-area-inset-right))}
+  .hud{left:calc(10px + env(safe-area-inset-left)); right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom))}
+  .dock{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+  .dock .btn{justify-content:center; padding:0 6px; min-width:0; height:40px}
+  #btn-explode{grid-column:1 / 3}
+  #btn-reset{background:var(--panel); border-color:var(--line)}
+  .nav-btn{height:40px; padding:0 14px}
+  .dots button{width:14px; height:28px}
+  .tip{max-width:min(280px, calc(100vw - 24px))}
+}
+@media (max-width: 380px){
+  .readout{gap:4px 14px}
+  .plate{font-size:10px}
+  .btn{font-size:12.5px; gap:6px}
+  .guide{padding:12px 14px 10px; gap:6px}
+  .guide h2{font-size:1rem}
+  .guide-body{max-height:18vh}
+  .spec{font-size:.84rem; padding-top:8px}
+  .dots{gap:2px}
+  .dots button{width:10px}
+  .dots button::before{width:8px}
+  .nav-btn{padding:0 11px}
+}
+@media (max-height: 500px) and (orientation: landscape){
+  .readout,.plate{display:none}
+  .guide-body{max-height:30vh}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <canvas id="stage" aria-label="Interactive 3D model of a pink robot vacuum cleaning a play rug. Drag to orbit, scroll to zoom."></canvas>
+  <div class="labels" id="labels" aria-hidden="true"></div>
+
+  <header class="masthead" id="mast">
+    <a class="back" href="../">&larr; All machines</a>
+    <p class="plate">Model RV-33 · 14.4 V · 2,600 mAh</p>
+    <h1>Inside a Robot Vacuum</h1>
+    <p class="hint" id="hint">Drag to orbit, scroll to zoom, hover any part to see what it does.</p>
+    <dl class="readout" aria-live="off">
+      <div><dt>Battery</dt><dd><span class="meter" id="ro-meter"><i></i></span><span id="ro-bat">78%</span></dd></div>
+      <div><dt>Crumbs eaten</dt><dd id="ro-crumbs">0</dd></div>
+      <div><dt>Robot</dt><dd id="ro-state">Cleaning</dd></div>
+    </dl>
+  </header>
+
+  <div class="hud" id="hud">
+    <nav class="dock" id="dock" aria-label="Robot controls">
+      <button class="btn" id="btn-clean" aria-pressed="true"><span class="lamp"></span><span id="clean-txt">Pause</span></button>
+      <button class="btn" id="btn-home" aria-pressed="false"><span class="lamp"></span>Go home</button>
+      <button class="btn" id="btn-xray" aria-pressed="false"><span class="lamp"></span>See inside</button>
+      <button class="btn primary" id="btn-explode" aria-pressed="false">Explode</button>
+      <button class="btn plain-btn" id="btn-reset">Reset view</button>
+    </nav>
+
+    <aside class="guide" id="guide" aria-labelledby="g-title">
+      <div class="guide-head"><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span></div>
+      <h2 id="g-title">Hello, robot!</h2>
+      <p class="guide-body" id="g-body" aria-live="polite"></p>
+      <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
+      <div class="guide-nav">
+        <button class="nav-btn" id="g-prev" disabled>Back</button>
+        <ol class="dots" id="g-dots"></ol>
+        <button class="nav-btn next" id="g-next">Start</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="tip" id="tip" hidden><b id="tip-name"></b><span id="tip-desc"></span></div>
+
+  <div class="fail" id="fail" hidden>
+    <div><h2>The 3D view didn't load</h2><p>This page needs WebGL and the Three.js library. Check your connection, then reload the page.</p></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+function fail(){ $('#fail').hidden = false; $('#hud').hidden = true; }
+if (!window.THREE || !THREE.OrbitControls || !THREE.RoomEnvironment) { fail(); return; }
+
+/* ---------------------------------------------------------------- helpers */
+const TAU = Math.PI * 2, V3 = THREE.Vector3, DS = THREE.DoubleSide;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+const rand = (a, b) => a + Math.random() * (b - a);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+
+function mergeGeos(list){
+  let nv = 0, ni = 0;
+  for (const g of list){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+  let vo = 0, io = 0;
+  for (const g of list){
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3);
+    if (g.index){ const a = g.index.array; for (let i = 0; i < a.length; i++) idx[io++] = a[i] + vo; }
+    else for (let i = 0; i < n; i++) idx[io++] = vo + i;
+    vo += n; g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  return out;
+}
+const v2 = pts => pts.map(([r, y]) => new THREE.Vector2(r, y));
+function latheY(profile, segs = 64, p0 = 0, pl = TAU){ return new THREE.LatheGeometry(v2(profile), segs, p0, pl); }
+function cylY(r, y0, y1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; }
+function cylX(r, x0, x1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg); g.rotateZ(Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+function rrShape(w, h, r){
+  r = Math.max(.0004, Math.min(r, w / 2, h / 2));
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function roundedBox(w, h, d, b){
+  const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, b * .8), { depth: Math.max(.0002, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 6 });
+  g.translate(0, 0, -(d - 2 * b) / 2); return g;
+}
+// extrude a top-view shape (shape x = world x, shape y = -world z) upward from y0 by depth
+function slab(shape, y0, depth, bevel = 0){
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(.0002, depth - 2 * bevel), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 48 });
+  g.rotateX(-Math.PI / 2); g.translate(0, y0 + bevel, 0); return g;
+}
+function tube(points, radius, segs = 24, radial = 6){ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), segs, radius, radial, false); }
+function canvasTex(w, h, draw){ const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.userData = { canvas: c, ctx: x }; return t; }
+
+/* ---------------------------------------------------------------- renderer, scene, camera */
+const canvas = $('#stage');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+catch (e) { fail(); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 40);
+camera.position.set(.6, .7, 1.1);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+controls.minDistance = .18; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI / 2 - .02;
+controls.screenSpacePanning = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a979e, .38));
+const key = new THREE.DirectionalLight(0xffffff, 1.7);
+key.position.set(-1.3, 3.1, 1.7);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: .5, far: 8 });
+key.shadow.bias = -.0004; key.shadow.normalBias = .01;
+key.target.position.set(0, 0, -.2);
+scene.add(key, key.target);
+const rimLight = new THREE.DirectionalLight(0xd9e6ff, .5);
+rimLight.position.set(2, 1.4, -2.2);
+scene.add(rimLight);
+
+const floorMat = new THREE.ShadowMaterial({ opacity: .24 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+scene.add(floor);
+
+/* ---------------------------------------------------------------- materials */
+const MAT = {
+  pink: () => new THREE.MeshPhysicalMaterial({ color: 0xe8579b, roughness: .38, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  pinkLight: () => new THREE.MeshPhysicalMaterial({ color: 0xef78b0, roughness: .36, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  trim: () => new THREE.MeshPhysicalMaterial({ color: 0x9a1a54, roughness: .42, clearcoat: .25, side: DS }),
+  white: () => new THREE.MeshPhysicalMaterial({ color: 0xf3eff1, roughness: .4, clearcoat: .3, envMapIntensity: .8, side: DS }),
+  grey: () => new THREE.MeshStandardMaterial({ color: 0x5a5f66, roughness: .6, side: DS }),
+  dark: () => new THREE.MeshStandardMaterial({ color: 0x2b2f34, roughness: .55, side: DS }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: 0x15171b, roughness: .08, clearcoat: 1, clearcoatRoughness: .05, side: DS }),
+  satin: () => new THREE.MeshStandardMaterial({ color: 0xc4c9cd, metalness: .9, roughness: .3, side: DS }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: 0x26292c, roughness: .82, side: DS }),
+  pcb: () => new THREE.MeshStandardMaterial({ color: 0x2c7a4b, roughness: .55, side: DS }),
+  cell: () => new THREE.MeshPhysicalMaterial({ color: 0x3b6fd8, roughness: .35, clearcoat: .5, side: DS }),
+  bristle: () => new THREE.MeshStandardMaterial({ color: 0xf6a9cb, roughness: .7, side: DS }),
+  fabric: () => new THREE.MeshStandardMaterial({ color: 0xf8e3ee, roughness: 1, side: DS }),
+};
+
+/* ---------------------------------------------------------------- parts registry */
+const parts = {}, partList = [], shellMats = [];
+function makePart(id, name, desc, parent, row){
+  const g = new THREE.Group(); g.name = id; parent.add(g);
+  const p = { id, name, desc, row, group: g, meshes: [], mats: [], hl: 0, dist: 0, rank: 0, base: new V3(), anchor: new V3(), side: 'right', stem: 24, labelEl: null };
+  parts[id] = p; partList.push(p); return p;
+}
+function addMesh(p, geo, mat, o = {}){
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = o.shadow !== false; m.receiveShadow = o.receive !== false;
+  m.userData.part = p; m.userData.shell = !!o.shell;
+  (o.parent || p.group).add(m);
+  p.meshes.push(m);
+  if (!p.mats.includes(mat)){
+    p.mats.push(mat);
+    mat.userData.base = mat.color.clone();
+    mat.userData.op = mat.opacity;
+    if (o.shell){ mat.transparent = true; shellMats.push(mat); }
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------- layout constants (metres) */
+const RAD = .165;                         // robot radius
+const RUG = { hx: 1.05, hz: .75 };        // play rug half-size
+const ROAM = { hx: .8, zmin: -.47, zmax: .52 };
+const DOCK_Z = -1.0;
+const DOCKED = { x: 0, z: -.795 };
+const OBST = [ { x: .55, z: .2, r: .05 }, { x: -.6, z: -.22, r: .05 }, { x: -.14, z: .43, r: .045 } ];
+
+const robot = new THREE.Group(); scene.add(robot);
+
+/* ================================================================ ROBOT */
+// cat picture for the lid (original ginger tabby, drawn in code)
+const catTex = canvasTex(1024, 1024, (x, W) => {
+  const c = W / 2;
+  const g = x.createRadialGradient(c, c * .85, 40, c, c, c); g.addColorStop(0, '#ffd6e8'); g.addColorStop(1, '#f6a3c8');
+  x.fillStyle = g; x.fillRect(0, 0, W, W);
+  // sparkles
+  x.fillStyle = '#ffffff';
+  for (const [sx, sy, s] of [[200, 210, 26], [820, 250, 20], [150, 610, 16], [870, 640, 24], [300, 860, 14], [760, 860, 18], [520, 120, 14]]){
+    x.beginPath(); x.moveTo(sx, sy - s); x.quadraticCurveTo(sx, sy, sx + s, sy); x.quadraticCurveTo(sx, sy, sx, sy + s); x.quadraticCurveTo(sx, sy, sx - s, sy); x.quadraticCurveTo(sx, sy, sx, sy - s); x.fill();
+  }
+  const ink = '#6b3416', fur = '#f4a259', furDark = '#d9772e';
+  x.lineJoin = 'round'; x.lineCap = 'round';
+  // ears
+  for (const sgn of [-1, 1]){
+    x.fillStyle = fur; x.strokeStyle = ink; x.lineWidth = 14;
+    x.beginPath(); x.moveTo(c + sgn * 285, c - 40); x.lineTo(c + sgn * 255, c - 330); x.lineTo(c + sgn * 85, c - 215); x.closePath(); x.fill(); x.stroke();
+    x.fillStyle = '#f7a1b5';
+    x.beginPath(); x.moveTo(c + sgn * 245, c - 95); x.lineTo(c + sgn * 232, c - 265); x.lineTo(c + sgn * 135, c - 200); x.closePath(); x.fill();
+  }
+  // head
+  x.fillStyle = fur; x.strokeStyle = ink; x.lineWidth = 14;
+  x.beginPath(); x.ellipse(c, c + 20, 300, 255, 0, 0, TAU); x.fill(); x.stroke();
+  // tabby stripes
+  x.strokeStyle = furDark; x.lineWidth = 22;
+  for (const [x0, y0, x1, y1] of [[c, c - 228, c, c - 150], [c - 72, c - 218, c - 58, c - 158], [c + 72, c - 218, c + 58, c - 158]]){ x.beginPath(); x.moveTo(x0, y0); x.lineTo(x1, y1); x.stroke(); }
+  x.lineWidth = 18;
+  for (const sgn of [-1, 1]) for (const dy of [-10, 40]){ x.beginPath(); x.moveTo(c + sgn * 292, c + dy); x.lineTo(c + sgn * 235, c + dy + 12); x.stroke(); }
+  // blush
+  x.fillStyle = 'rgba(247,120,150,.45)';
+  for (const sgn of [-1, 1]){ x.beginPath(); x.ellipse(c + sgn * 205, c + 95, 48, 30, 0, 0, TAU); x.fill(); }
+  // muzzle
+  x.fillStyle = '#fff4e8';
+  for (const sgn of [-1, 1]){ x.beginPath(); x.ellipse(c + sgn * 52, c + 118, 82, 62, 0, 0, TAU); x.fill(); }
+  // eyes
+  for (const sgn of [-1, 1]){
+    const ex = c + sgn * 118, ey = c - 5;
+    x.fillStyle = '#ffffff'; x.strokeStyle = ink; x.lineWidth = 10;
+    x.beginPath(); x.ellipse(ex, ey, 64, 74, 0, 0, TAU); x.fill(); x.stroke();
+    x.fillStyle = '#76c35f'; x.beginPath(); x.ellipse(ex, ey + 6, 52, 60, 0, 0, TAU); x.fill();
+    x.fillStyle = '#1d1a18'; x.beginPath(); x.ellipse(ex, ey + 8, 22, 46, 0, 0, TAU); x.fill();
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(ex - 18, ey - 20, 15, 0, TAU); x.fill(); x.beginPath(); x.arc(ex + 16, ey + 26, 7, 0, TAU); x.fill();
+  }
+  // nose and mouth
+  x.fillStyle = '#f07898'; x.strokeStyle = ink; x.lineWidth = 8;
+  x.beginPath(); x.moveTo(c - 26, c + 62); x.quadraticCurveTo(c, c + 52, c + 26, c + 62); x.quadraticCurveTo(c + 4, c + 96, c, c + 98); x.quadraticCurveTo(c - 4, c + 96, c - 26, c + 62); x.fill(); x.stroke();
+  x.lineWidth = 10;
+  x.beginPath(); x.moveTo(c, c + 98); x.lineTo(c, c + 118); x.quadraticCurveTo(c - 22, c + 150, c - 52, c + 128); x.moveTo(c, c + 118); x.quadraticCurveTo(c + 22, c + 150, c + 52, c + 128); x.stroke();
+  // whiskers
+  x.lineWidth = 7;
+  for (const sgn of [-1, 1]) for (const [y0, y1] of [[c + 92, c + 62], [c + 112, c + 112], [c + 132, c + 160]]){ x.beginPath(); x.moveTo(c + sgn * 150, y0); x.lineTo(c + sgn * 330, y1); x.stroke(); }
+  // paws peeking over the edge
+  for (const sgn of [-1, 1]){
+    const px = c + sgn * 140, py = c + 318;
+    x.fillStyle = fur; x.strokeStyle = ink; x.lineWidth = 12;
+    x.beginPath(); x.ellipse(px, py, 92, 62, 0, 0, TAU); x.fill(); x.stroke();
+    x.lineWidth = 8; for (const dx of [-30, 0, 30]){ x.beginPath(); x.moveTo(px + dx, py - 46); x.lineTo(px + dx, py - 18); x.stroke(); }
+    x.fillStyle = '#f7a1b5'; x.beginPath(); x.ellipse(px, py + 14, 26, 18, 0, 0, TAU); x.fill();
+  }
+});
+
+// Cat lid
+{
+  const p = makePart('lid', 'Cat lid', 'The lid with the cat picture. Lift it up to take out the dust bin.', robot, 'robot');
+  const m = MAT.pinkLight();
+  addMesh(p, cylY(.117, .0786, .0826, 96), m, { shell: true });
+  const pic = new THREE.CircleGeometry(.111, 96); pic.rotateX(-Math.PI / 2); pic.translate(0, .0828, 0);
+  addMesh(p, pic, new THREE.MeshPhysicalMaterial({ map: catTex, roughness: .35, clearcoat: .6, clearcoatRoughness: .15 }), { shell: true });
+  const notch = roundedBox(.03, .003, .008, .0012); notch.translate(0, .0826, -.112); addMesh(p, notch, MAT.trim());
+}
+// Top cover
+{
+  const p = makePart('shell', 'Top cover', 'The robot’s pink shell. It keeps all the insides safe.', robot, 'robot');
+  const m = MAT.pink();
+  addMesh(p, mergeGeos([latheY([[.1186, .0802], [.125, .0814], [.15, .0814], [.158, .0802], [.1625, .0776], [.165, .0736]], 128), latheY([[.165, .0736], [.165, .031]], 64, 1.745, 2.793)]), m, { shell: true });
+  const seam = new THREE.TorusGeometry(.1184, .0011, 6, 128); seam.rotateX(Math.PI / 2); seam.translate(0, .0806, 0);
+  addMesh(p, seam, MAT.dark(), { shell: true });
+}
+// Camera eye
+{
+  const p = makePart('camera', 'Camera eye', 'The robot’s eye. It looks around the room so the robot can make a map.', robot, 'robot');
+  addMesh(p, cylY(.0115, .0806, .0846, 40).translate(0, 0, .137), MAT.trim());
+  const dome = new THREE.SphereGeometry(.0078, 28, 14, 0, TAU, 0, Math.PI / 2); dome.rotateX(.45); dome.translate(0, .0843, .137);
+  addMesh(p, dome, MAT.glass());
+}
+// Buttons with icons and the power light ring
+let ledRingMat;
+{
+  const p = makePart('buttons', 'Buttons', 'The power button starts and stops cleaning. The house button sends the robot home.', robot, 'robot');
+  const icon = draw => canvasTex(128, 128, (x, w, h) => { x.strokeStyle = '#ffffff'; x.fillStyle = '#ffffff'; x.lineWidth = 12; x.lineCap = 'round'; x.lineJoin = 'round'; draw(x, w, h); });
+  const powerTex = icon(x => { x.beginPath(); x.arc(64, 68, 34, -Math.PI / 2 + .6, -Math.PI / 2 - .6 + TAU); x.stroke(); x.beginPath(); x.moveTo(64, 24); x.lineTo(64, 62); x.stroke(); });
+  const homeTex = icon(x => { x.beginPath(); x.moveTo(26, 64); x.lineTo(64, 28); x.lineTo(102, 64); x.moveTo(38, 56); x.lineTo(38, 100); x.lineTo(90, 100); x.lineTo(90, 56); x.stroke(); });
+  for (const [bx, tex] of [[-.042, powerTex], [.042, homeTex]]){
+    addMesh(p, new THREE.CylinderGeometry(.0085, .0092, .003, 32).translate(bx, .0829, .129), MAT.trim());
+    const lab = new THREE.Mesh(new THREE.CircleGeometry(.0062, 24).rotateX(-Math.PI / 2).translate(bx, .0846, .129), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    lab.raycast = () => {}; p.group.add(lab);
+  }
+  ledRingMat = new THREE.MeshStandardMaterial({ color: 0x30373d, emissive: 0x000000, roughness: .4 });
+  addMesh(p, new THREE.TorusGeometry(.0102, .0012, 8, 40).rotateX(Math.PI / 2).translate(-.042, .0822, .129), ledRingMat);
+}
+// Bumper (front, squishes on contact)
+let bumperPush;
+{
+  const p = makePart('bumper', 'Bumper', 'The robot’s soft nose. When it touches a toy, it squishes and tells the robot to turn.', robot, 'robot');
+  bumperPush = new THREE.Group(); p.group.add(bumperPush);
+  addMesh(p, latheY([[.1625, .022], [.167, .026], [.169, .034], [.169, .066], [.1665, .0722], [.163, .0745]], 96, -1.745, 3.49), MAT.pinkLight(), { shell: true, parent: bumperPush });
+  addMesh(p, latheY([[.1696, .037], [.1696, .056]], 80, -1.3, 2.6), MAT.glass(), { shell: true, parent: bumperPush });
+}
+// Circuit board
+{
+  const p = makePart('board', 'Circuit board', 'The robot’s brain. It listens to the sensors and tells the motors what to do.', robot, 'robot');
+  addMesh(p, roundedBox(.17, .0018, .1, .0006).translate(0, .067, .075), MAT.pcb());
+  const chips = [new THREE.BoxGeometry(.026, .004, .026).translate(0, .0698, .075)];
+  for (const [cx, cz] of [[-.05, .05], [-.05, .1], [.05, .1], [.055, .05]]) chips.push(new THREE.BoxGeometry(.014, .003, .01).translate(cx, .0693, cz));
+  addMesh(p, mergeGeos(chips), MAT.dark());
+  addMesh(p, mergeGeos([new THREE.BoxGeometry(.02, .006, .008).translate(-.065, .071, .035), new THREE.BoxGeometry(.02, .006, .008).translate(.065, .071, .035)]), MAT.white());
+  addMesh(p, mergeGeos([cylY(.004, .068, .078, 16).translate(.03, 0, .115), cylY(.004, .068, .078, 16).translate(-.03, 0, .115)]), MAT.cell());
+}
+// Battery
+{
+  const p = makePart('battery', 'Battery', 'Stores electricity like a lunchbox stores food, so the robot can drive without a wire.', robot, 'robot');
+  const cells = []; for (let i = 0; i < 4; i++) cells.push(cylX(.009, -.035, .035, 24).translate(0, .044, .058 + i * .0185));
+  addMesh(p, mergeGeos(cells), MAT.cell());
+  addMesh(p, mergeGeos([new THREE.BoxGeometry(.002, .02, .074).translate(-.0365, .044, .086), new THREE.BoxGeometry(.002, .02, .074).translate(.0365, .044, .086)]), MAT.satin());
+  addMesh(p, tube([new V3(.03, .054, .06), new V3(.03, .062, .055), new V3(.035, .066, .045)], .0012, 12, 5), new THREE.MeshStandardMaterial({ color: 0xd23b3b, roughness: .5 }));
+  addMesh(p, tube([new V3(-.03, .054, .06), new V3(-.03, .062, .055), new V3(-.035, .066, .045)], .0012, 12, 5), MAT.dark());
+}
+// Suction fan
+let impeller;
+{
+  const p = makePart('fan', 'Suction fan', 'A tiny fast fan, a bit like the pink fan, that sucks air, dust and crumbs into the robot.', robot, 'robot');
+  addMesh(p, latheY([[.028, .033], [.03, .036], [.03, .068], [.026, .071]], 48).translate(-.1, 0, -.07), MAT.trim());
+  addMesh(p, cylY(.029, .033, .035, 40).translate(-.1, 0, -.07), MAT.trim());
+  addMesh(p, cylY(.015, .035, .042, 24).translate(-.1, 0, -.07), MAT.satin());
+  const duct = roundedBox(.024, .02, .03, .004); duct.translate(-.1, .046, -.112);
+  addMesh(p, duct, MAT.trim());
+  impeller = new THREE.Group(); impeller.position.set(-.1, .054, -.07); p.group.add(impeller);
+  const blades = [cylY(.009, -.012, .012, 20)];
+  for (let i = 0; i < 9; i++){ const b = new THREE.BoxGeometry(.016, .022, .0016); b.rotateY(.5); b.translate(.017, 0, 0); b.rotateY(i / 9 * TAU); blades.push(b); }
+  blades.push(cylY(.026, -.0125, -.011, 40));
+  addMesh(p, mergeGeos(blades), MAT.white(), { parent: impeller });
+}
+// Dust bin (fills up as the robot eats crumbs)
+let dustHeap;
+{
+  const p = makePart('dustbin', 'Dust bin', 'The robot’s tummy. All the dust and crumbs end up in here.', robot, 'robot');
+  addMesh(p, roundedBox(.14, .042, .1, .007).translate(.01, .054, -.08), new THREE.MeshPhysicalMaterial({ color: 0xf8c3dc, roughness: .2, transparent: true, opacity: .55, clearcoat: .6, side: DS }), { shadow: false });
+  const ridges = []; for (let i = 0; i < 9; i++) ridges.push(new THREE.BoxGeometry(.006, .03, .0035).translate(-.061, .055, -.112 + i * .0078));
+  addMesh(p, mergeGeos(ridges), MAT.white());
+  const handle = new THREE.TorusGeometry(.016, .0022, 8, 24, Math.PI); handle.translate(.01, .075, -.08);
+  addMesh(p, handle, MAT.trim());
+  dustHeap = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12), new THREE.MeshStandardMaterial({ color: 0x8e8984, roughness: 1 }));
+  dustHeap.position.set(.02, .035, -.08); dustHeap.scale.set(.05, .002, .036); dustHeap.raycast = () => {};
+  p.group.add(dustHeap);
+}
+// Bottom shell (chassis) with openings for the wheels, roller brush and front wheel
+{
+  const p = makePart('chassis', 'Bottom shell', 'The bottom of the robot. All the other parts are fixed to it.', robot, 'robot');
+  const sh = new THREE.Shape(); sh.absarc(0, 0, .16, 0, TAU, false);
+  const hole = (w, h, cx, cy) => { const s = rrShape(w, h, .006); const path = new THREE.Path(s.getPoints(4).map(v => new THREE.Vector2(v.x + cx, v.y + cy))); sh.holes.push(path); };
+  hole(.03, .084, .117, 0); hole(.03, .084, -.117, 0); hole(.18, .04, 0, .04);
+  const ch = new THREE.Path(); ch.absarc(0, -.125, .017, 0, TAU, true); sh.holes.push(ch);
+  addMesh(p, slab(sh, .014, .017, .002), MAT.grey(), { shell: true });
+  addMesh(p, mergeGeos([new THREE.BoxGeometry(.012, .002, .02).translate(.03, .0132, -.058), new THREE.BoxGeometry(.012, .002, .02).translate(-.03, .0132, -.058)]), MAT.satin());
+}
+// Cliff sensors
+{
+  const p = makePart('cliffSensors', 'Cliff sensors', 'Little eyes underneath that spot stairs, so the robot never falls down.', robot, 'robot');
+  const g = []; for (const [cx, cz] of [[.085, .11], [-.085, .11], [.14, .02], [-.14, .02]]) g.push(roundedBox(.018, .003, .009, .001).translate(cx, .0125, cz));
+  addMesh(p, mergeGeos(g), MAT.glass());
+}
+// Side brush (front right)
+let sideSpin;
+{
+  const p = makePart('sideBrush', 'Side brush', 'Spins round to sweep dust out of corners and under the robot.', robot, 'robot');
+  sideSpin = new THREE.Group(); sideSpin.position.set(-.105, .006, .1); p.group.add(sideSpin);
+  addMesh(p, cylY(.012, 0, .008, 24), MAT.trim(), { parent: sideSpin });
+  const arms = [];
+  for (let k = 0; k < 3; k++){
+    const a = k / 3 * TAU, rot = new THREE.Matrix4().makeRotationY(a);
+    const arm = tube([new V3(.008, .003, 0), new V3(.035, .002, .01), new V3(.066, .0012, .006)], .0016, 16, 5); arm.applyMatrix4(rot); arms.push(arm);
+    for (let j = 0; j < 7; j++){
+      const sp = (j - 3) * .12, len = .026;
+      const b = new THREE.CylinderGeometry(.0006, .0006, len, 4); b.rotateZ(Math.PI / 2); b.translate(len / 2, 0, 0); b.rotateY(-sp + .15); b.translate(.064, .0012, .006); b.applyMatrix4(rot); arms.push(b);
+    }
+  }
+  addMesh(p, mergeGeos(arms), MAT.bristle(), { parent: sideSpin });
+}
+// Roller brush
+let mainSpin;
+{
+  const p = makePart('mainBrush', 'Roller brush', 'Rolls round under the robot and flicks dust up into the dust bin.', robot, 'robot');
+  mainSpin = new THREE.Group(); mainSpin.position.set(0, .022, -.04); p.group.add(mainSpin);
+  addMesh(p, cylX(.0075, -.085, .085, 20), MAT.dark(), { parent: mainSpin });
+  const hel = [];
+  for (const ph of [0, Math.PI]){ const pts = []; for (let i = 0; i <= 60; i++){ const t = i / 60, a = ph + t * 1.6 * TAU; pts.push(new V3(-.08 + .16 * t, .0115 * Math.cos(a), .0115 * Math.sin(a))); } hel.push(tube(pts, .0034, 120, 6)); }
+  addMesh(p, mergeGeos(hel), MAT.bristle(), { parent: mainSpin });
+  addMesh(p, mergeGeos([cylX(.0135, -.088, -.082, 24), cylX(.0135, .082, .088, 24)]), MAT.trim());
+}
+// Drive wheels and their motors
+let wheelL, wheelR;
+{
+  const p = makePart('wheels', 'Wheels and motors', 'Two little motors, one for each big wheel, drive the robot around.', robot, 'robot');
+  const mk = sgn => {
+    const g = new THREE.Group(); g.position.set(sgn * .117, .034, 0); p.group.add(g);
+    const tread = [cylX(.034, -.011, .011, 48)];
+    for (let i = 0; i < 26; i++){ const b = new THREE.BoxGeometry(.021, .003, .005); b.translate(0, .0345, 0); b.rotateX(i / 26 * TAU); tread.push(b); }
+    addMesh(p, mergeGeos(tread), MAT.rubber(), { parent: g });
+    addMesh(p, mergeGeos([cylX(.022, -.0115, .0115, 32), cylX(.006, sgn * .011, sgn * .014, 16)]), MAT.white(), { parent: g });
+    return g;
+  };
+  wheelL = mk(1); wheelR = mk(-1);
+  const motors = [];
+  for (const sgn of [1, -1]){ motors.push(cylX(.012, sgn * .072, sgn * .104, 24).translate(0, .034, 0)); }
+  addMesh(p, mergeGeos(motors), MAT.satin());
+  const boxes = []; for (const sgn of [1, -1]) boxes.push(roundedBox(.028, .022, .045, .004).translate(sgn * .088, .046, -.012));
+  addMesh(p, mergeGeos(boxes), MAT.dark());
+}
+// Front wheel (caster)
+let casterSwivel, casterSpin;
+{
+  const p = makePart('caster', 'Front wheel', 'A little wheel at the front that swivels so the robot can turn smoothly.', robot, 'robot');
+  addMesh(p, cylY(.018, .014, .026, 28).translate(0, 0, .125), MAT.dark());
+  casterSwivel = new THREE.Group(); casterSwivel.position.set(0, .012, .125); p.group.add(casterSwivel);
+  addMesh(p, mergeGeos([new THREE.BoxGeometry(.0025, .012, .016).translate(.007, .004, 0), new THREE.BoxGeometry(.0025, .012, .016).translate(-.007, .004, 0)]), MAT.grey(), { parent: casterSwivel });
+  casterSpin = new THREE.Group(); casterSwivel.add(casterSpin);
+  addMesh(p, cylX(.011, -.0045, .0045, 24), MAT.rubber(), { parent: casterSpin });
+}
+
+/* ================================================================ DOCK, RUG, TOYS */
+let dockLedMat, dockCord;
+{
+  const p = makePart('dock', 'Charging dock', 'The robot’s bed. When the robot drives onto it, it fills the battery with electricity.', scene, 'prop');
+  addMesh(p, roundedBox(.2, .1, .07, .016).translate(0, .05, DOCK_Z), MAT.white());
+  addMesh(p, roundedBox(.21, .006, .12, .0025).translate(0, .003, DOCK_Z + .095), MAT.white());
+  addMesh(p, mergeGeos([new THREE.BoxGeometry(.012, .002, .03).translate(.03, .0065, DOCK_Z + .135), new THREE.BoxGeometry(.012, .002, .03).translate(-.03, .0065, DOCK_Z + .135)]), MAT.satin());
+  dockLedMat = new THREE.MeshStandardMaterial({ color: 0x30373d, emissive: 0x000000, roughness: .4 });
+  addMesh(p, roundedBox(.07, .007, .004, .0015).translate(0, .078, DOCK_Z + .0355), dockLedMat);
+  addMesh(p, roundedBox(.12, .014, .004, .002).translate(0, .045, DOCK_Z + .0355), MAT.pink());
+  dockCord = new THREE.CatmullRomCurve3([new V3(0, .02, DOCK_Z - .035), new V3(.02, .006, DOCK_Z - .09), new V3(.12, .004, DOCK_Z - .17), new V3(.3, .004, DOCK_Z - .2), new V3(.42, .004, DOCK_Z - .26)]);
+  addMesh(p, new THREE.TubeGeometry(dockCord, 60, .003, 8, false), MAT.white());
+  const end = dockCord.getPoint(1), tan = dockCord.getTangent(1).setY(0).normalize();
+  const plug = new THREE.Group(); plug.position.copy(end).setY(.009); plug.lookAt(plug.position.clone().add(tan)); p.group.add(plug);
+  addMesh(p, roundedBox(.026, .018, .042, .005).translate(0, 0, .022), MAT.white(), { parent: plug });
+  addMesh(p, mergeGeos([new THREE.CylinderGeometry(.0024, .0024, .018, 12).rotateX(Math.PI / 2).translate(-.0095, 0, .052), new THREE.CylinderGeometry(.0024, .0024, .018, 12).rotateX(Math.PI / 2).translate(.0095, 0, .052)]), MAT.satin(), { parent: plug });
+}
+// play rug with paw prints
+{
+  const tex = canvasTex(1024, 732, (x, w, h) => {
+    const r = 60;
+    x.fillStyle = '#86cbb0'; x.beginPath(); x.roundRect ? x.roundRect(0, 0, w, h, r) : x.rect(0, 0, w, h); x.fill();
+    x.fillStyle = '#ade0ca'; x.beginPath(); x.roundRect ? x.roundRect(28, 28, w - 56, h - 56, r - 20) : x.rect(28, 28, w - 56, h - 56); x.fill();
+    x.fillStyle = 'rgba(70,140,115,.38)';
+    const paw = (px, py, s, a) => { x.save(); x.translate(px, py); x.rotate(a); x.beginPath(); x.ellipse(0, 6 * s, 9 * s, 7 * s, 0, 0, TAU); x.fill(); for (const [tx, ty] of [[-9, -6], [-3, -11], [3, -11], [9, -6]]){ x.beginPath(); x.ellipse(tx * s, ty * s, 3 * s, 3.6 * s, 0, 0, TAU); x.fill(); } x.restore(); };
+    for (let i = 0; i < 9; i++){ const t = i / 8; paw(120 + t * 780 + (i % 2) * 18, 610 - Math.sin(t * Math.PI) * 420 + (i % 2) * 22, 1.6, .4 + t * .9); }
+    x.fillStyle = 'rgba(255,255,255,.55)';
+    for (let i = 0; i < 70; i++){ const px = 50 + ((i * 137) % 930), py = 50 + ((i * 251) % 640); x.beginPath(); x.arc(px, py, 3, 0, TAU); x.fill(); }
+  });
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(RUG.hx * 2, RUG.hz * 2), new THREE.MeshStandardMaterial({ map: tex, roughness: .95, transparent: true }));
+  rug.rotation.x = -Math.PI / 2; rug.position.y = .0008; rug.receiveShadow = true; scene.add(rug);
+}
+// toys
+{
+  const blockTex = (bg, letter) => canvasTex(128, 128, (x, w) => { x.fillStyle = bg; x.fillRect(0, 0, w, w); x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = 8; x.strokeRect(10, 10, w - 20, w - 20); x.fillStyle = '#3b3f58'; x.font = '700 72px "Archivo", Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(letter, w / 2, w / 2 + 4); });
+  const blocks = [['blockA', '#9fe3c9', 'A', 0], ['blockB', '#ffe08a', 'B', 1]];
+  for (const [id, bg, letter, i] of blocks){
+    const p = makePart(id, 'Toy block', 'A toy in the robot’s way. When the robot bumps it, it backs up and turns.', scene, 'prop');
+    const m = addMesh(p, new THREE.BoxGeometry(.07, .07, .07), new THREE.MeshPhysicalMaterial({ map: blockTex(bg, letter), roughness: .5, clearcoat: .3 }));
+    m.position.set(OBST[i].x, .035, OBST[i].z); m.rotation.y = i ? .5 : -.3;
+  }
+  const p = makePart('yarn', 'Ball of yarn', 'The cat’s favourite toy. The robot steers around it.', scene, 'prop');
+  const yarnTex = canvasTex(256, 128, (x, w, h) => { x.fillStyle = '#e8569a'; x.fillRect(0, 0, w, h); x.strokeStyle = '#f9a7cc'; x.lineWidth = 5; for (let i = -10; i < 30; i++){ x.beginPath(); for (let t = 0; t <= w; t += 8){ const yy = i * 9 + Math.sin(t / 22 + i) * 6 + t * .25; t ? x.lineTo(t, yy) : x.moveTo(t, yy); } x.stroke(); } });
+  addMesh(p, new THREE.SphereGeometry(.045, 40, 28).translate(OBST[2].x, .045, OBST[2].z), new THREE.MeshStandardMaterial({ map: yarnTex, roughness: .95 }));
+  addMesh(p, tube([new V3(OBST[2].x + .03, .012, OBST[2].z + .03), new V3(OBST[2].x + .08, .003, OBST[2].z + .06), new V3(OBST[2].x + .14, .003, OBST[2].z + .04), new V3(OBST[2].x + .2, .003, OBST[2].z + .09)], .0025, 40, 6), new THREE.MeshStandardMaterial({ color: 0xe8569a, roughness: .95 }));
+}
+
+/* ---------------------------------------------------------------- explode layout: parts stack up the robot's vertical axis */
+scene.updateMatrixWorld(true);
+const STACK = ['caster', 'wheels', 'mainBrush', 'sideBrush', 'cliffSensors', 'chassis', 'battery', 'fan', 'dustbin', 'board', 'bumper', 'shell', 'camera', 'buttons', 'lid'];
+let stackTop = 0;
+{
+  const boxes = STACK.map(id => new THREE.Box3().setFromObject(parts[id].group));
+  let hi = boxes[0].max.y;
+  STACK.forEach((id, i) => {
+    const p = parts[id], b = boxes[i];
+    if (i > 0){ const lo = hi + .05; p.dist = lo - b.min.y; hi = lo + (b.max.y - b.min.y); }
+    p.rank = i / (STACK.length - 1);
+    p.side = i % 2 ? 'left' : 'right'; p.stem = [26, 64][Math.floor(i / 2) % 2];
+    const c = b.getCenter(new V3());
+    p.anchor.copy(p.group.worldToLocal(new V3(p.side === 'right' ? b.max.x : b.min.x, c.y, c.z)));
+  });
+  stackTop = hi;
+}
+for (const p of partList) p.base.copy(p.group.position);
+
+/* ---------------------------------------------------------------- point flows (electricity, air, water) */
+const pointVS = `attribute float aAlpha; attribute float aSize; varying float vA; uniform float uScale;
+  void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = max(1.0, aSize * uScale / -mv.z); }`;
+const pointFS = `uniform vec3 uColor; uniform float uCore; varying float vA;
+  void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = (1.0 - smoothstep(0.3, 1.0, d)) * vA; if (a < 0.01) discard;
+  vec3 c = mix(uColor, vec3(1.0), uCore * (1.0 - smoothstep(0.0, 0.5, d))); gl_FragColor = vec4(c, a); }`;
+const pointMats = [];
+function makeFlow(parent, paths, n, size, speed, token){
+  const mat = new THREE.ShaderMaterial({ uniforms: { uColor: { value: new THREE.Color() }, uScale: { value: 600 }, uCore: { value: .5 } }, vertexShader: pointVS, fragmentShader: pointFS, transparent: true, depthWrite: false, depthTest: false });
+  mat.userData.token = token; pointMats.push(mat);
+  const pos = new Float32Array(n * 3), alpha = new Float32Array(n), sz = new Float32Array(n);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1)); g.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+  const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.renderOrder = 10; parent.add(pts);
+  const lens = paths.map(c => c.getLength()), u = new Float32Array(n), which = new Uint8Array(n);
+  for (let i = 0; i < n; i++){ which[i] = i % paths.length; u[i] = Math.random(); }
+  return { vis: 0, update(dt, on){
+    this.vis += ((on ? 1 : 0) - this.vis) * Math.min(1, dt * 4);
+    pts.visible = this.vis > .01; if (!pts.visible) return;
+    for (let i = 0; i < n; i++){
+      u[i] += dt * speed / lens[which[i]]; if (u[i] > 1) u[i] -= 1;
+      const q = paths[which[i]].getPointAt(u[i]);
+      pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z;
+      alpha[i] = this.vis * .95 * smooth(0, .05, u[i]) * (1 - smooth(.93, 1, u[i])); sz[i] = size;
+    }
+    g.attributes.position.needsUpdate = true; g.attributes.aAlpha.needsUpdate = true; g.attributes.aSize.needsUpdate = true;
+  } };
+}
+const CR = pts => new THREE.CatmullRomCurve3(pts.map(a => new V3(...a)));
+// charging: plug -> cord -> dock -> contacts -> robot battery (robot parked on the dock, facing it)
+const chargePath = new THREE.CurvePath();
+{
+  const cord = dockCord.getPoints(30).reverse();
+  const plugTip = dockCord.getPoint(1).clone().add(dockCord.getTangent(1).setY(0).normalize().multiplyScalar(.06)).setY(.009);
+  chargePath.add(new THREE.LineCurve3(plugTip, cord[0]));
+  chargePath.add(new THREE.CatmullRomCurve3(cord));
+  chargePath.add(CR([[0, .02, DOCK_Z - .035], [0, .06, DOCK_Z], [0, .02, DOCK_Z + .05], [.03, .008, DOCK_Z + .135], [.03, .014, DOCKED.z - .058], [0, .05, DOCKED.z + .085]]));
+}
+const chargeFlow = makeFlow(scene, [chargePath], 26, .014, .32, '--volt');
+const elecFlow = makeFlow(robot, [
+  CR([[0, .054, .085], [0, .068, .06], [.06, .06, .01], [.088, .034, 0]]),
+  CR([[0, .054, .085], [0, .068, .06], [-.06, .06, .01], [-.088, .034, 0]]),
+  CR([[0, .054, .085], [0, .068, .05], [-.07, .062, -.02], [-.1, .042, -.07]])
+], 24, .012, .16, '--volt');
+const airFlow = makeFlow(robot, [
+  CR([[0, .006, -.04], [0, .03, -.045], [.005, .05, -.07], [-.045, .056, -.082], [-.065, .056, -.08], [-.09, .056, -.072], [-.1, .052, -.07], [-.1, .047, -.1], [-.1, .045, -.13], [-.11, .042, -.19]]),
+  CR([[-.19, .004, .12], [-.08, .004, .04], [0, .006, -.04], [0, .03, -.045], [.005, .05, -.07], [-.065, .056, -.08], [-.1, .052, -.07], [-.1, .045, -.13], [-.11, .042, -.19]])
+], 34, .011, .22, '--air');
+
+/* ---------------------------------------------------------------- crumbs on the rug */
+const DUST_N = 170;
+const dustMesh = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1, 0), new THREE.MeshStandardMaterial({ roughness: .9 }), DUST_N);
+dustMesh.castShadow = false; dustMesh.receiveShadow = true; dustMesh.frustumCulled = false; dustMesh.raycast = () => {};
+scene.add(dustMesh);
+const DUST_COLORS = ['#b07a45', '#d9a066', '#8f6236', '#9aa0a6', '#c9ccd0', '#f7a8c8', '#9fd8f0'].map(c => new THREE.Color(c));
+const dust = { alive: new Uint8Array(DUST_N), x: new Float32Array(DUST_N), z: new Float32Array(DUST_N), s: new Float32Array(DUST_N), rot: new Float32Array(DUST_N), suck: new Float32Array(DUST_N), sx: new Float32Array(DUST_N), sz: new Float32Array(DUST_N), acc: 0 };
+const dm = new THREE.Matrix4(), dq = new THREE.Quaternion(), dpos = new V3(), dscl = new V3(), dE = new THREE.Euler();
+function spawnDust(i){
+  for (let tries = 0; tries < 20; tries++){
+    const x = rand(-RUG.hx + .1, RUG.hx - .1), z = rand(-RUG.hz + .1, RUG.hz - .1);
+    if (OBST.some(o => Math.hypot(x - o.x, z - o.z) < o.r + .03)) continue;
+    if (Math.hypot(x - R.x, z - R.z) < RAD + .05) continue;
+    dust.x[i] = x; dust.z[i] = z; dust.s[i] = rand(.0035, .0075); dust.rot[i] = rand(0, TAU); dust.alive[i] = 1; dust.suck[i] = 0;
+    dustMesh.setColorAt(i, DUST_COLORS[Math.floor(Math.random() * (Math.random() < .85 ? 5 : DUST_COLORS.length))]);
+    return;
+  }
+}
+
+/* ---------------------------------------------------------------- robot behaviour */
+const R = { x: .25, z: .15, th: .9, v: 0, w: 0, mode: 'roam', queue: [], bump: 0, battery: 78, crumbs: 0, fill: 0, act: 1, prevMode: 'roam', seed: Math.random() * 10 };
+const SPEED = .15, TURN = 1.7, WHEEL_R = .034, HALF_TRACK = .117;
+function planTo(x, z){
+  const out = [], sx = R.x, sz = R.z, dx = x - sx, dz = z - sz, L = Math.hypot(dx, dz) || 1;
+  for (const o of OBST){
+    const t = clamp(((o.x - sx) * dx + (o.z - sz) * dz) / (L * L), 0, 1);
+    const cx = sx + dx * t, cz = sz + dz * t, d = Math.hypot(o.x - cx, o.z - cz);
+    if (d < RAD + o.r + .03 && t > 0 && t < 1){
+      let nx = cx - o.x, nz = cz - o.z; const nl = Math.hypot(nx, nz);
+      if (nl < 1e-4){ nx = -dz / L; nz = dx / L; } else { nx /= nl; nz /= nl; }
+      out.push({ t: 'goto', x: o.x + nx * (RAD + o.r + .08), z: o.z + nz * (RAD + o.r + .08) });
+      break;
+    }
+  }
+  out.push({ t: 'goto', x, z });
+  return out;
+}
+function startRoam(){
+  if (R.mode === 'roam') return;
+  const fromDock = R.mode === 'docked' || R.z < -.55;
+  R.mode = 'roam'; R.queue = [];
+  if (fromDock) R.queue.push({ t: 'drive', d: Math.max(.05, -.42 - R.z), sp: .12 }, { t: 'turn', to: rand(-.8, .8) });
+}
+function goHome(){
+  if (R.mode === 'docked' || R.mode === 'home') return;
+  R.mode = 'home';
+  R.queue = planTo(0, -.42).concat([{ t: 'turn', to: 0 }, { t: 'drive', d: DOCKED.z + .42, sp: .08 }, { t: 'call', fn: () => { R.mode = 'docked'; R.v = 0; R.w = 0; } }]);
+}
+function pauseRobot(){ R.mode = 'pause'; R.queue = []; R.v = 0; R.w = 0; }
+function moveForward(d){ R.x += Math.sin(R.th) * d; R.z += Math.cos(R.th) * d; }
+function runQueue(dt){
+  const a = R.queue[0]; if (!a) return false;
+  if (a.t === 'turn'){
+    const d = wrapA(a.to - R.th), step = Math.sign(d) * Math.min(Math.abs(d), TURN * dt);
+    R.th += step; R.w = step / dt; R.v = 0; if (Math.abs(d) < 1e-3) R.queue.shift();
+  } else if (a.t === 'drive'){
+    const sp = a.sp || SPEED, step = Math.sign(a.d) * Math.min(Math.abs(a.d), sp * dt);
+    moveForward(step); a.d -= step; R.v = step / dt; R.w = 0; if (Math.abs(a.d) < 1e-5) R.queue.shift();
+  } else if (a.t === 'goto'){
+    const dx = a.x - R.x, dz = a.z - R.z;
+    R.queue.splice(0, 1, { t: 'turn', to: Math.atan2(dx, dz) }, { t: 'drive', d: Math.hypot(dx, dz), sp: .18 });
+  } else if (a.t === 'wait'){ a.time -= dt; R.v = 0; R.w = 0; if (a.time <= 0) R.queue.shift(); }
+  else if (a.t === 'bump'){ R.bump = 1; R.queue.shift(); }
+  else if (a.t === 'call'){ R.queue.shift(); a.fn(); }
+  return true;
+}
+function roam(dt, t){
+  const fx = Math.sin(R.th), fz = Math.cos(R.th), px = R.x + fx * .06, pz = R.z + fz * .06;
+  const hit = OBST.find(o => Math.hypot(px - o.x, pz - o.z) < RAD + o.r);
+  if (hit){
+    R.queue.push({ t: 'bump' }, { t: 'wait', time: .25 }, { t: 'drive', d: -.07, sp: .12 }, { t: 'turn', to: R.th + (Math.random() < .5 ? 1 : -1) * rand(1.5, 2.7) });
+  } else if (px < -ROAM.hx || px > ROAM.hx || pz < ROAM.zmin || pz > ROAM.zmax){
+    R.queue.push({ t: 'turn', to: Math.atan2(-R.x * .9 + rand(-.3, .3), -R.z * .9 + rand(-.3, .3)) });
+  } else {
+    R.w = Math.sin(t * .6 + R.seed) * .35; R.th += R.w * dt; moveForward(SPEED * dt); R.v = SPEED;
+  }
+}
+
+/* ---------------------------------------------------------------- state */
+const S = { explode: false, ep: 0, xray: false, xr: 0, step: 0, hovered: null, stepHL: new Set(), flows: {}, follow: true };
+
+/* ---------------------------------------------------------------- theme tokens -> 3D colours */
+const HL = new THREE.Color(0xffb02e);
+let tealCol = new THREE.Color('#1a9e8f'), voltCol = new THREE.Color('#c4780f');
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const m of pointMats) m.uniforms.uColor.value.set(cs.getPropertyValue(m.userData.token).trim() || '#1f73b2');
+  tealCol = new THREE.Color(cs.getPropertyValue('--teal').trim() || '#1a9e8f');
+  voltCol = new THREE.Color(cs.getPropertyValue('--volt').trim() || '#c4780f');
+  floorMat.opacity = parseFloat(cs.getPropertyValue('--shadow')) || .24;
+}
+readTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+/* ---------------------------------------------------------------- explode labels */
+const labelLayer = $('#labels');
+for (const p of partList){
+  if (p.row !== 'robot') continue;
+  const el = document.createElement('div');
+  el.className = 'lbl ' + p.side;
+  el.style.setProperty('--stem', p.stem + 'px');
+  el.innerHTML = '<span class="lbl-pin"></span><span class="lbl-stem"></span><span class="lbl-name"></span>';
+  el.querySelector('.lbl-name').textContent = p.name;
+  labelLayer.appendChild(el); p.labelEl = el;
+}
+const projV = new V3();
+let W = 1, Hh = 1;
+function updateLabels(){
+  const vis = smooth(.72, 1, S.ep);
+  for (const p of partList){
+    const el = p.labelEl; if (!el) continue;
+    if (vis < .01){ if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'; continue; }
+    projV.copy(p.anchor); p.group.localToWorld(projV); projV.project(camera);
+    if (projV.z > 1){ el.style.visibility = 'hidden'; continue; }
+    const x = (projV.x * .5 + .5) * W, y = (-projV.y * .5 + .5) * Hh;
+    el.style.visibility = 'visible'; el.style.opacity = vis.toFixed(3);
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(${p.side === 'right' ? '-3px' : 'calc(-100% + 3px)'}, -50%)`;
+    el.classList.toggle('hot', S.hovered === p);
+  }
+}
+
+/* ---------------------------------------------------------------- camera framing (views can follow the robot) */
+const mast = $('#mast'), hud = $('#hud'), guide = $('#guide'), dock = $('#dock');
+let insets = { left: 0, right: 0, top: 0, bottom: 0 };
+function computeInsets(){
+  const app = $('#app').getBoundingClientRect(), narrow = app.width <= 760;
+  const m = mast.getBoundingClientRect(), h = hud.getBoundingClientRect(), g = guide.getBoundingClientRect(), d = dock.getBoundingClientRect();
+  if (narrow) insets = { left: 0, right: 0, top: m.bottom - app.top + 4, bottom: app.bottom - h.top + 6 };
+  else insets = { left: 0, right: app.right - g.left + 8, top: (m.bottom - app.top) * .5, bottom: (app.bottom - d.top) * .7 };
+}
+function resize(){
+  const r = $('#app').getBoundingClientRect();
+  W = Math.max(1, r.width); Hh = Math.max(1, r.height);
+  renderer.setSize(W, Hh, false);
+  camera.aspect = W / Hh;
+  computeInsets();
+  camera.setViewOffset(W, Hh, (insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2, W, Hh);
+  camera.updateProjectionMatrix();
+  const scale = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+  for (const m of pointMats) m.uniforms.uScale.value = scale;
+}
+const VIEWS = {
+  overview: { t: [0, .04, .02], d: [.45, .75, 1], w: 1.25, h: .7, follow: true },
+  dock: { t: [0, .04, -.86], d: [.6, .55, 1], w: .75, h: .42, follow: false },
+  top: { t: [0, .07, .04], d: [.15, 1, .6], w: .42, h: .38, follow: true },
+  wheels: { t: [0, .04, 0], d: [1, .5, .4], w: .5, h: .32, follow: true },
+  sees: { t: [0, .05, .08], d: [.55, .6, 1], w: .8, h: .5, follow: true },
+  brushes: { t: [0, .03, .04], d: [.7, .5, 1], w: .52, h: .34, follow: true },
+  fan: { t: [-.03, .05, -.04], d: [.35, 1, .5], w: .5, h: .4, follow: true }
+};
+function explodeView(){ return { t: [0, stackTop / 2 + .01, 0], d: [.12, .42, 1], w: 1.0, h: stackTop + .2, follow: true }; }
+const robotPos = new V3(), lastRobot = new V3();
+function viewPose(v){
+  const fov = camera.fov * Math.PI / 180, tn = 2 * Math.tan(fov / 2);
+  const fw = Math.max(120, W - insets.left - insets.right), fh = Math.max(120, Hh - insets.top - insets.bottom);
+  const dist = Math.max(v.h * Hh / (fh * tn), v.w * Hh / (fw * tn)) * 1.08;
+  const t = new V3(...v.t), dir = new V3(...v.d).normalize();
+  return { t, p: t.clone().addScaledVector(dir, dist) };   // relative to the robot when v.follow
+}
+let tween = null, curView = VIEWS.overview;
+function flyTo(v, dur = 1.15){
+  curView = v; S.follow = !!v.follow;
+  const to = viewPose(v), base = v.follow ? robotPos : new V3();
+  if (reduceMotion){ camera.position.copy(base).add(to.p); controls.target.copy(base).add(to.t); controls.update(); tween = null; return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), rel: to, follow: !!v.follow, t: 0, dur };
+}
+let dragging = false;
+controls.addEventListener('start', () => { tween = null; dragging = true; hideTip(); });
+controls.addEventListener('end', () => { dragging = false; });
+
+/* ---------------------------------------------------------------- walkthrough */
+const STEPS = [
+  { title: 'Hello, robot!', view: 'overview', mode: 'roam', xray: false, hl: [],
+    body: 'This is a pink robot vacuum with a cat on top. It drives around all by itself and eats up dust and crumbs! Let’s find out how it works. Press Next to start.',
+    spec: 'Count the crumbs it eats. The number is at the top of the screen.' },
+  { title: 'It drinks electricity', view: 'dock', mode: 'home', xray: false, flows: { charge: 1 }, hl: ['dock', 'battery'],
+    body: 'The robot sleeps on its charging dock. A grown-up plugs the dock into the wall, and electricity flows through the wire, into the dock and through two shiny metal spots into the robot’s battery. Plugs and wall sockets are only for grown-ups to touch.',
+    spec: 'Watch the orange dots fill up the battery, and see the battery number go up.' },
+  { title: 'Press the button', view: 'top', mode: 'roam', xray: false, hl: ['buttons'],
+    body: 'On top there are two buttons. Press the power button and its light glows, the robot wakes up and drives off its dock to clean. The house button sends it back home.',
+    spec: 'Press Go home at the bottom of the screen, then press Clean to send it out again.' },
+  { title: 'Wheels and motors', view: 'wheels', mode: 'roam', xray: true, flows: { elec: 1 }, hl: ['wheels'],
+    body: 'Electricity flows from the battery to the robot’s brain, and the brain tells two little motors when to turn. Each motor spins one big wheel. When one wheel goes faster than the other, the robot turns.',
+    spec: 'Watch the wheels. Can you see one go faster when the robot turns?' },
+  { title: 'How it sees', view: 'sees', mode: 'roam', xray: false, hl: ['camera', 'bumper', 'cliffSensors'],
+    body: 'The camera on top is the robot’s eye, and it helps the robot make a map of the room. The bumper on its nose squishes when it touches a toy, so the robot backs up and turns. Little sensors underneath look for stairs, so it never falls down.',
+    spec: 'Watch for the robot bumping a toy block. It squishes its bumper, backs up and turns around!' },
+  { title: 'Brushes sweep', view: 'brushes', mode: 'roam', xray: true, hl: ['sideBrush', 'mainBrush'],
+    body: 'The spinny side brush sweeps dust out of corners and pushes it under the robot. Then the roller brush underneath flicks the dust up into the robot’s tummy.',
+    spec: 'Find the brush that sticks out at the front. Watch it spin!' },
+  { title: 'There’s a fan inside', view: 'fan', mode: 'roam', xray: true, flows: { air: 1 }, hl: ['fan', 'dustbin'],
+    body: 'Inside the robot is a little fan, a bit like the pink fan! This one pulls air in through the bottom, like drinking through a straw. The dust gets caught in the dust bin and the clean air blows out the back.',
+    spec: 'Watch the blue dots go up into the dust bin. The bin fills up as the robot cleans.' },
+  { title: 'Going home', view: 'dock', mode: 'home', xray: false, flows: { charge: 1 }, hl: ['dock'],
+    body: 'When the robot finishes cleaning or its battery gets low, it drives back to its dock all by itself. It touches the metal spots and drinks electricity again, ready for next time.',
+    spec: 'Press Clean to send it out again, then press Go home and watch it find its way back.' }
+];
+const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
+for (let i = 1; i < STEPS.length; i++){
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('aria-label', `Step ${i}: ${STEPS[i].title}`); b.addEventListener('click', () => goStep(i));
+  li.appendChild(b); gDots.appendChild(li);
+}
+function goStep(i){
+  const s = STEPS[i]; S.step = i;
+  gTitle.textContent = s.title; gBody.textContent = s.body; gSpec.textContent = s.spec;
+  gCount.textContent = i === 0 ? 'Overview' : `Step ${i} of ${STEPS.length - 1}`;
+  gPrev.disabled = i === 0;
+  gNext.textContent = i === 0 ? 'Start' : (i === STEPS.length - 1 ? 'Finish' : 'Next');
+  [...gDots.querySelectorAll('button')].forEach((b, k) => { const n = k + 1; b.classList.toggle('done', n < i); if (n === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  if (S.explode) setExplode(false, false);
+  if (s.mode === 'home') goHome(); else startRoam();
+  setXray(!!s.xray);
+  S.flows = s.flows || {};
+  S.stepHL = new Set(s.hl);
+  flyTo(VIEWS[s.view]);
+  syncButtons();
+}
+gPrev.addEventListener('click', () => goStep(Math.max(0, S.step - 1)));
+gNext.addEventListener('click', () => goStep(S.step >= STEPS.length - 1 ? 0 : S.step + 1));
+
+/* ---------------------------------------------------------------- controls */
+const btnClean = $('#btn-clean'), cleanTxt = $('#clean-txt'), btnHome = $('#btn-home'), btnX = $('#btn-xray'), btnE = $('#btn-explode');
+function syncButtons(){
+  const cleaning = R.mode === 'roam';
+  btnClean.setAttribute('aria-pressed', String(cleaning)); cleanTxt.textContent = cleaning ? 'Pause' : 'Clean';
+  btnHome.setAttribute('aria-pressed', String(R.mode === 'home' || R.mode === 'docked'));
+}
+function setXray(on){ S.xray = on; btnX.setAttribute('aria-pressed', String(on)); }
+function setExplode(on, fly = true){
+  S.explode = on; btnE.setAttribute('aria-pressed', String(on)); btnE.textContent = on ? 'Reassemble' : 'Explode';
+  if (on){ if (fly) flyTo(explodeView(), 1.3); }
+  else if (fly) flyTo(VIEWS[STEPS[S.step].view], .7);
+}
+btnClean.addEventListener('click', () => { if (S.explode) setExplode(false); if (R.mode === 'roam') pauseRobot(); else startRoam(); syncButtons(); });
+btnHome.addEventListener('click', () => { if (S.explode) setExplode(false); goHome(); syncButtons(); });
+btnX.addEventListener('click', () => setXray(!S.xray));
+btnE.addEventListener('click', () => setExplode(!S.explode));
+$('#btn-reset').addEventListener('click', () => flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view]));
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight' && S.step < STEPS.length - 1) goStep(S.step + 1);
+  else if (e.key === 'ArrowLeft' && S.step > 0) goStep(S.step - 1);
+});
+if (coarse) $('#hint').textContent = 'Drag to orbit, pinch to zoom, tap any part to see what it does.';
+
+/* ---------------------------------------------------------------- hover / tap picking */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickables = partList.flatMap(p => p.meshes);
+const tip = $('#tip'), tipName = $('#tip-name'), tipDesc = $('#tip-desc');
+let pointer = null, needPick = false, downAt = null;
+function pick(cx, cy){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  const xr = S.xr > .5 && S.ep < .05;
+  let shell = null;
+  for (const h of hits){ const u = h.object.userData; if (u.shell && xr){ if (!shell) shell = u.part; continue; } return u.part; }
+  return shell;
+}
+function showTip(p, cx, cy){
+  if (!p){ hideTip(); return; }
+  tipName.textContent = p.name; tipDesc.textContent = p.desc; tip.hidden = false;
+  const r = $('#app').getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = cx - r.left + 16, y = cy - r.top + 18;
+  if (x + tw > r.width - 12) x = cx - r.left - tw - 14;
+  if (y + th > r.height - 12) y = cy - r.top - th - 14;
+  tip.style.transform = `translate(${Math.max(12, x)}px, ${Math.max(12, y)}px)`;
+}
+function hideTip(){ tip.hidden = true; S.hovered = null; canvas.classList.remove('pick'); }
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pointer = { x: e.clientX, y: e.clientY }; needPick = true; });
+canvas.addEventListener('pointerleave', () => { pointer = null; hideTip(); });
+canvas.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !downAt) return;
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8 && performance.now() - downAt.t < 450){ const p = pick(e.clientX, e.clientY); S.hovered = p; showTip(p, e.clientX, e.clientY); }
+});
+
+/* ---------------------------------------------------------------- readout */
+const roBat = $('#ro-bat'), roMeter = $('#ro-meter'), roCrumbs = $('#ro-crumbs'), roState = $('#ro-state');
+let roT = 0;
+function updateReadout(){
+  const b = Math.round(R.battery);
+  roBat.textContent = b + '%'; roMeter.firstElementChild.style.width = `calc(${b}% - 2px)`; roMeter.classList.toggle('low', b < 25);
+  roCrumbs.textContent = R.crumbs.toLocaleString('en-US');
+  roState.textContent = S.explode ? 'Taken apart' : ({ roam: 'Cleaning', home: 'Going home', pause: 'Paused', docked: R.battery < 99.5 ? 'Charging' : 'Resting on dock' })[R.mode];
+}
+
+/* ---------------------------------------------------------------- frame update */
+function applyHighlight(p, k){
+  for (const m of p.mats){ m.color.copy(m.userData.base).lerp(HL, .5 * k); if (m.emissive && m !== ledRingMat && m !== dockLedMat) m.emissive.copy(HL).multiplyScalar(.3 * k); }
+}
+const tmpW = new V3(), inlet = new V3();
+function update(dt, t){
+  // robot behaviour
+  const hold = S.explode || S.ep > .001;
+  if (hold){ R.v = 0; R.w = 0; }
+  else if (!runQueue(dt)){
+    if (R.mode === 'roam') roam(dt, t); else { R.v = 0; R.w = 0; }
+  }
+  if (R.mode === 'roam' && R.battery < 12 && !hold){ goHome(); syncButtons(); }
+  R.battery = clamp(R.battery + dt * (R.mode === 'docked' ? 1.5 : R.mode === 'roam' ? -.2 : R.mode === 'home' ? -.1 : -.01), 0, 100);
+  robot.position.set(R.x, 0, R.z); robot.rotation.y = R.th;
+  robotPos.set(R.x, 0, R.z);
+
+  // wheels, caster, brushes, fan
+  wheelL.rotation.x += (R.v - R.w * HALF_TRACK) / WHEEL_R * dt;
+  wheelR.rotation.x += (R.v + R.w * HALF_TRACK) / WHEEL_R * dt;
+  const lat = R.w * .125, sp = Math.hypot(R.v, lat);
+  if (sp > .005) casterSwivel.rotation.y += wrapA(Math.atan2(lat, R.v) - casterSwivel.rotation.y) * Math.min(1, dt * 10);
+  casterSpin.rotation.x += sp / .011 * dt;
+  const cleaning = R.mode === 'roam' && !hold;
+  R.act += ((cleaning ? 1 : 0) - R.act) * Math.min(1, dt * 3);
+  sideSpin.rotation.y += 9 * R.act * dt;
+  mainSpin.rotation.x -= 15 * R.act * dt;
+  impeller.rotation.y -= 30 * R.act * dt;
+  R.bump = Math.max(0, R.bump - dt * 3.5);
+  bumperPush.position.z = -.007 * Math.sin(Math.min(1, R.bump) * Math.PI / 2);
+  dustHeap.scale.y = .002 + .02 * R.fill;
+
+  // lights: power ring teal while working, amber breathing while charging; dock light shows charging
+  const breathe = .55 + .45 * Math.sin(t * 3);
+  if (R.mode === 'docked' && R.battery < 99.5){ ledRingMat.emissive.copy(voltCol).multiplyScalar(breathe); dockLedMat.emissive.copy(voltCol).multiplyScalar(breathe); }
+  else if (R.mode === 'docked'){ ledRingMat.emissive.copy(tealCol).multiplyScalar(.6); dockLedMat.emissive.copy(tealCol).multiplyScalar(.8); }
+  else if (R.mode === 'pause' || S.explode){ ledRingMat.emissive.setRGB(.05, .05, .05); dockLedMat.emissive.setRGB(.15, .15, .15); }
+  else { ledRingMat.emissive.copy(tealCol); dockLedMat.emissive.setRGB(.15, .15, .15); }
+
+  // explode: parts rise along the robot's vertical axis
+  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
+  for (const p of partList){
+    if (p.row !== 'robot') continue;
+    const local = clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1);
+    p.group.position.y = p.base.y + easeIO(local) * p.dist;
+  }
+
+  // x-ray shells
+  const xT = (S.xray && S.ep < .02) ? 1 : 0;
+  S.xr += (xT - S.xr) * Math.min(1, dt * 6);
+  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .84 * S.xr); m.depthWrite = S.xr < .25; }
+
+  // highlights
+  const pulseK = .36 + .26 * Math.sin(t * 3.4);
+  for (const p of partList){
+    const tg = S.hovered === p ? 1 : (S.stepHL.has(p.id) && S.ep < .02 ? pulseK : 0);
+    let nh = p.hl + (tg - p.hl) * Math.min(1, dt * 12);
+    if (tg === 0 && nh < .004) nh = 0;
+    if (nh !== p.hl){ p.hl = nh; applyHighlight(p, nh); }
+  }
+
+  // crumbs: spawn, get sucked up when the robot drives over them
+  if (!hold){
+    dust.acc += dt * 1.6; let alive = 0; for (let i = 0; i < DUST_N; i++) alive += dust.alive[i];
+    while (dust.acc >= 1){ dust.acc -= 1; if (alive < 150){ const i = dust.alive.indexOf(0); if (i >= 0){ spawnDust(i); alive++; } } }
+  }
+  inlet.set(0, .015, -.04); robot.localToWorld(inlet);
+  for (let i = 0; i < DUST_N; i++){
+    if (!dust.alive[i]){ dm.makeScale(0, 0, 0); dustMesh.setMatrixAt(i, dm); continue; }
+    let x = dust.x[i], y = dust.s[i] * .6, z = dust.z[i], s = dust.s[i];
+    if (dust.suck[i] > 0){
+      dust.suck[i] += dt / .25; const k = Math.min(1, dust.suck[i]);
+      x = dust.sx[i] + (inlet.x - dust.sx[i]) * k; z = dust.sz[i] + (inlet.z - dust.sz[i]) * k; y += (inlet.y - y) * k; s *= 1 - k * .85;
+      if (dust.suck[i] >= 1){ dust.alive[i] = 0; R.crumbs++; R.fill = Math.min(1, R.fill + .005); }
+    } else if (cleaning && Math.hypot(x - R.x, z - R.z) < RAD - .02){ dust.suck[i] = .001; dust.sx[i] = x; dust.sz[i] = z; }
+    dpos.set(x, y, z); dE.set(dust.rot[i], dust.rot[i] * 2, 0); dq.setFromEuler(dE); dscl.set(s, s * .55, s);
+    dm.compose(dpos, dq, dscl); dustMesh.setMatrixAt(i, dm);
+  }
+  dustMesh.instanceMatrix.needsUpdate = true; if (dustMesh.instanceColor) dustMesh.instanceColor.needsUpdate = true;
+
+
+  // flows
+  chargeFlow.update(dt, !!S.flows.charge && R.mode === 'docked' && R.battery < 99.5 && !hold);
+  elecFlow.update(dt, !!S.flows.elec && !hold);
+  airFlow.update(dt, !!S.flows.air && cleaning);
+
+  // camera: follow the robot, tween between views
+  if (tween){
+    tween.t += dt; const k = easeIO(clamp(tween.t / tween.dur, 0, 1));
+    const base = tween.follow ? robotPos : new V3();
+    tmpW.copy(base).add(tween.rel.p); camera.position.lerpVectors(tween.p0, tmpW, k);
+    tmpW.copy(base).add(tween.rel.t); controls.target.lerpVectors(tween.t0, tmpW, k);
+    if (k >= 1) tween = null;
+  } else if (S.follow){
+    tmpW.subVectors(robotPos, lastRobot); camera.position.add(tmpW); controls.target.add(tmpW);
+  }
+  lastRobot.copy(robotPos);
+
+  if (needPick && pointer && !dragging){
+    needPick = false;
+    const p = pick(pointer.x, pointer.y);
+    S.hovered = p; canvas.classList.toggle('pick', !!p);
+    if (p) showTip(p, pointer.x, pointer.y); else tip.hidden = true;
+  }
+  roT += dt; if (roT > .12){ roT = 0; updateReadout(); syncButtons(); }
+}
+
+/* ---------------------------------------------------------------- go */
+for (let i = 0; i < 120; i++) spawnDust(i);
+resize();
+window.addEventListener('resize', resize);
+if ('ResizeObserver' in window) new ResizeObserver(() => resize()).observe(guide);
+goStep(0);
+resize();
+robotPos.set(R.x, 0, R.z); lastRobot.copy(robotPos);
+{ const v = viewPose(VIEWS.overview); camera.position.copy(robotPos).add(v.p); controls.target.copy(robotPos).add(v.t); tween = null; controls.update(); }
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt, now / 1000);
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
