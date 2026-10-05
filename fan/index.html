@@ -170,6 +170,30 @@ button:focus-visible{outline:2px solid var(--air); outline-offset:2px}
 
 <style>
 
+/* Collapsible walkthrough card: tap or swipe the header to fold it away */
+button.guide-head{
+  appearance:none; -webkit-appearance:none; position:relative; width:100%; margin:0; padding:0; border:0; background:none;
+  color:inherit; font:inherit; text-align:left; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+  display:flex; align-items:center; gap:10px;
+}
+button.guide-head .count{margin-left:auto}
+.fold{display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid var(--line); border-radius:6px;
+  font:500 10.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--panel-solid)}
+.fold svg{width:10px; height:10px; transition:transform .2s ease}
+button.guide-head:hover .fold{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.guide.collapsed .fold svg{transform:rotate(180deg)}
+.grip{display:none}
+.guide-content{display:grid; gap:inherit; min-width:0}
+.guide.collapsed .guide-content{display:none}
+.guide.collapsed{width:auto; padding-top:12px; padding-bottom:12px}
+@media (max-width: 760px){
+  .grip{display:block; position:absolute; top:-8px; left:50%; width:38px; height:4px; margin-left:-19px; border-radius:2px; background:color-mix(in srgb, var(--ink) 25%, transparent)}
+  button.guide-head{padding-top:6px}
+  .guide{padding-top:16px}
+  .guide.collapsed{padding-top:16px; padding-bottom:12px}
+}
+@media (prefers-reduced-motion: reduce){ .fold svg{transition:none} }
+
 /* Back-to-menu link */
 .back{pointer-events:auto; justify-self:start; display:inline-flex; align-items:center; gap:6px; margin:-6px 0 0 -8px; padding:6px 8px; border-radius:6px;
   font:500 11.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-decoration:none}
@@ -248,7 +272,8 @@ body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
     </nav>
 
     <aside class="guide" id="guide" aria-labelledby="g-title">
-      <div class="guide-head"><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span></div>
+      <button type="button" class="guide-head" id="g-toggle" aria-expanded="true" aria-controls="g-content" title="Tap or swipe down to hide"><span class="grip" aria-hidden="true"></span><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span><span class="fold"><span id="g-fold-txt">Hide</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+      <div class="guide-content" id="g-content">
       <h2 id="g-title">From wall socket to breeze</h2>
       <p class="guide-body" id="g-body" aria-live="polite"></p>
       <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
@@ -256,6 +281,7 @@ body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
         <button class="nav-btn" id="g-prev" disabled>Back</button>
         <ol class="dots" id="g-dots"></ol>
         <button class="nav-btn next" id="g-next">Start</button>
+      </div>
       </div>
     </aside>
   </div>
@@ -999,7 +1025,7 @@ function computeInsets(){
   const narrow = app.width <= 760;
   const m = mast.getBoundingClientRect(), h = hud.getBoundingClientRect(), g = guide.getBoundingClientRect(), d = dock.getBoundingClientRect();
   if (narrow) insets = { left: 0, right: 0, top: m.bottom - app.top + 4, bottom: app.bottom - h.top + 6 };
-  else insets = { left: 0, right: app.right - g.left + 8, top: (m.bottom - app.top) * .45, bottom: (app.bottom - d.top) * .7 };
+  else insets = { left: 0, right: guide.classList.contains('collapsed') ? 0 : app.right - g.left + 8, top: (m.bottom - app.top) * .45, bottom: (app.bottom - d.top) * .7 };
 }
 function resize(){
   const r = $('#app').getBoundingClientRect();
@@ -1266,6 +1292,29 @@ function update(dt, t){
 resize();
 window.addEventListener('resize', () => { resize(); });
 if ('ResizeObserver' in window) new ResizeObserver(() => resize()).observe(guide);
+/* ---------------------------------------------------------------- fold the walkthrough card */
+{
+  const tgl = $('#g-toggle'), foldTxt = $('#g-fold-txt');
+  let downY = null, swiped = false;
+  function setCollapsed(on){
+    if (guide.classList.contains('collapsed') === on) return;
+    guide.classList.toggle('collapsed', on);
+    tgl.setAttribute('aria-expanded', String(!on));
+    tgl.title = on ? 'Tap or swipe up to show' : 'Tap or swipe down to hide';
+    foldTxt.textContent = on ? 'Show' : 'Hide';
+    resize();
+    flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view], .8);
+  }
+  tgl.addEventListener('click', () => { if (swiped){ swiped = false; return; } setCollapsed(!guide.classList.contains('collapsed')); });
+  tgl.addEventListener('pointerdown', e => { downY = e.clientY; swiped = false; });
+  tgl.addEventListener('pointerup', e => {
+    if (downY === null) return;
+    const dy = e.clientY - downY; downY = null;
+    if (dy > 30){ swiped = true; setCollapsed(true); }
+    else if (dy < -30){ swiped = true; setCollapsed(false); }
+  });
+  tgl.addEventListener('pointercancel', () => { downY = null; });
+}
 goStep(0);
 resize();
 { const v = viewPose(VIEWS.overview); camera.position.copy(v.pos); controls.target.copy(v.target); tween = null; controls.update(); }
