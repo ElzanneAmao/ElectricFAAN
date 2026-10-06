@@ -499,15 +499,16 @@ const spinners = [];   // groups that rotate with the shaft (about head z)
 const bladeMat = MAT.blade();
 let blurMat;
 {
-  const p = makePart('blades', 'Fan blades', 'Five angled blades that push air forward as they turn clockwise, seen from the front.', head, 'head');
+  const p = makePart('blades', 'Fan blades', 'Three wide, angled blades that push air forward as they turn clockwise, seen from the front.', head, 'head');
   const spin = new THREE.Group(); p.group.add(spin); spinners.push(spin);
   addMesh(p, latheZ([[.0055, .084], [.026, .084], [.033, .081], [.036, .074], [.036, .052], [.033, .047], [.026, .045], [.0055, .045]], 48), MAT.hub(), { parent: spin });
   function blade(theta0){
     const NR = 18, NU = 10, r0 = .026, R = .198, zc = .065, pos = [], idx = [];
     for (let i = 0; i <= NR; i++){
       const s = i / NR, r = r0 + (R - r0) * s;
-      let c = .028 + .098 * smooth(0, .62, s);
-      if (s > .7){ const q = (s - .7) / .3; c *= Math.sqrt(Math.max(.02, 1 - q * q)); }
+      // a broad paddle: narrow at the hub, wide through the middle, with a rounded tip
+      let c = .034 + .17 * smooth(0, .55, s);
+      if (s > .62){ const q = (s - .62) / .38; c *= Math.sqrt(Math.max(.02, 1 - q * q)); }
       const beta = (36 - 16 * s) * Math.PI / 180, tc = theta0 + .24 * s * s;
       for (let j = 0; j <= NU; j++){
         const u = j / NU, q = (u - .5) * c;
@@ -519,7 +520,7 @@ let blurMat;
     for (let i = 0; i < NR; i++) for (let j = 0; j < NU; j++){ const a = i * (NU + 1) + j, b = a + NU + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals(); return g;
   }
-  const bg = []; for (let k = 0; k < 5; k++) bg.push(blade(k / 5 * TAU));
+  const bg = []; for (let k = 0; k < 3; k++) bg.push(blade(k / 3 * TAU));
   addMesh(p, mergeGeos(bg), bladeMat, { parent: spin });
   // motion-blur disc that fades in with speed
   const tex = canvasTex(256, 256, (x, w, h) => {
