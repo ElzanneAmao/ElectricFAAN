@@ -8,6 +8,7 @@ Interactive 3D models of everyday machines. The home page is a menu, and each ma
 | Robot Vacuum | `robot-vacuum/` |
 | Surge Protector | `surge-protector/` |
 | Battery | `battery/` |
+| The Journey of Electricity | `power-journey/` |
 
 Live site: https://elzanneamao.github.io/ElectricFAAN/
 
