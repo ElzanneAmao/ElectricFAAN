@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta property="og:title" content="Inside a Battery">
-<meta property="og:description" content="Interactive 3D rechargeable lantern: watch the battery go flat, charge it up again, and see the energy move inside a giant battery cell.">
+<meta property="og:description" content="Interactive 3D giant battery: watch it power a lantern until it goes flat, charge it up again, and see the energy move inside.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8B%3C/text%3E%3C/svg%3E">
 <title>Inside a Battery</title>
-<meta name="description" content="Interactive 3D rechargeable lantern: watch the battery go flat, charge it up again, and see the energy move inside a giant battery cell.">
+<meta name="description" content="Interactive 3D giant battery: watch it power a lantern until it goes flat, charge it up again, and see the energy move inside.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Londrina+Solid:wght@300;400;900&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&display=swap">
@@ -215,18 +215,18 @@ body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
 <body>
 
 <div class="app" id="app">
-  <canvas id="stage" aria-label="Interactive 3D model of a pink rechargeable lantern with its charger, next to a giant cut-open battery cell. Drag to orbit, scroll to zoom."></canvas>
+  <canvas id="stage" aria-label="Interactive 3D model of a giant battery with a window in its side, powering a small lantern through two wires, with a charger on the wall. Drag to orbit, scroll to zoom."></canvas>
   <div class="labels" id="labels" aria-hidden="true"></div>
 
   <header class="masthead" id="mast">
     <a class="back" href="../">&larr; All machines</a>
-    <p class="plate">Model LT-26 · 3.7 V · 2 x 2,600 mAh</p>
+    <p class="plate">Giant cell · 3.7 V · 2,600 mAh</p>
     <h1>Inside a Battery</h1>
     <p class="hint" id="hint">Drag to orbit, scroll to zoom, hover any part to see what it does.</p>
     <dl class="readout" aria-live="off">
       <div><dt>Battery</dt><dd><span class="meter" id="ro-meter"><i></i></span><span id="ro-bat">80%</span></dd></div>
       <div><dt>Light</dt><dd id="ro-light">On</dd></div>
-      <div><dt>Lantern</dt><dd id="ro-state">Glowing</dd></div>
+      <div><dt>Battery feels</dt><dd id="ro-state">Happy</dd></div>
     </dl>
   </header>
 
@@ -242,7 +242,7 @@ body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
     <aside class="guide" id="guide" aria-labelledby="g-title">
       <button type="button" class="guide-head" id="g-toggle" aria-expanded="true" aria-controls="g-content" title="Tap or swipe down to hide"><span class="grip" aria-hidden="true"></span><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span><span class="fold"><span id="g-fold-txt">Hide</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
       <div class="guide-content" id="g-content">
-      <h2 id="g-title">Hello, lantern!</h2>
+      <h2 id="g-title">Hello, battery!</h2>
       <p class="guide-body" id="g-body" aria-live="polite"></p>
       <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
       <div class="guide-nav">
@@ -409,11 +409,11 @@ function addMesh(p, geo, mat, o = {}){
   return m;
 }
 
-/* ---------------------------------------------------------------- scene tweaks: a small lantern on the floor near a wall */
+/* ---------------------------------------------------------------- scene tweaks: a giant battery on a stand, a small lantern beside it, a wall behind */
 camera.near = .004; camera.far = 30; camera.updateProjectionMatrix();
 controls.minDistance = .08; controls.maxDistance = 3;
 controls.minAzimuthAngle = -1.35; controls.maxAzimuthAngle = 1.35;
-key.position.set(-1.2, 2.2, 1.8); key.target.position.set(.05, .05, -.05);
+key.position.set(-1.2, 2.2, 1.8); key.target.position.set(.05, .1, -.05);
 Object.assign(key.shadow.camera, { left: -.8, right: .8, top: .8, bottom: -.8, near: .5, far: 7 });
 key.shadow.camera.updateProjectionMatrix();
 key.shadow.bias = -.0002; key.shadow.normalBias = .003;
@@ -431,8 +431,8 @@ const wallMat = new THREE.ShadowMaterial({ opacity: .15 });
 
 /* ---------------------------------------------------------------- helpers */
 function cylZ(r, z0, z1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), seg); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; }
-// a cylinder lying along x with an optional wedge cut away (theta measured from +z, see three's CylinderGeometry)
-function cylXCut(r, x0, x1, ts = 0, tl = TAU, open = false, seg = 48){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg, 1, open, ts, tl); g.rotateZ(-Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+// an upright cylinder from y0 to y1, optionally only part of the way round (theta is measured from +z towards +x)
+function cylYPart(r, y0, y1, ts = 0, tl = TAU, open = false, seg = 64){ const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg, 1, open, ts, tl); g.translate(0, (y0 + y1) / 2, 0); return g; }
 function textSprite(text, h, opts = {}){
   const fs = 64, pad = 18, font = `400 ${fs}px "Londrina Solid", Arial, sans-serif`;
   const s = new THREE.Sprite(new THREE.SpriteMaterial({ transparent: true, depthWrite: false }));
@@ -453,83 +453,20 @@ function textSprite(text, h, opts = {}){
   if (document.fonts) document.fonts.load(font).then(draw);
   return s;
 }
-
-/* ================================================================ LANTERN */
-const lantern = new THREE.Group(); scene.add(lantern);
 const MANAGED = new Set();   // materials whose glow is driven by the battery, not by highlights
-// Base housing
-{
-  const p = makePart('baseShell', 'Lantern base', 'The bottom of the lantern. The battery lives safely inside it.', lantern, 'lantern');
-  const m = new THREE.MeshPhysicalMaterial({ color: SRGB('#2f7d6d'), roughness: .5, clearcoat: .15, side: DS });
-  addMesh(p, roundedBox(.13, .055, .13, .012).translate(0, .0315, 0), m, { shell: true });
-  const feet = []; for (const sx of [-.048, .048]) for (const sz of [-.048, .048]) feet.push(cylY(.008, 0, .005, 16).translate(sx, 0, sz));
-  addMesh(p, mergeGeos(feet), MAT.rubber());
-  addMesh(p, roundedBox(.003, .0065, .012, .001).translate(-.0645, .0306, 0), MAT.dark());
-}
-// Battery holder
-{
-  const p = makePart('holder', 'Battery holder', 'A little cradle that holds the battery cells still, with springs at the ends.', lantern, 'lantern');
-  addMesh(p, roundedBox(.084, .008, .07, .002).translate(0, .011, 0), MAT.dark());
-  const springs = [];
-  for (const sz of [-.019, .019]) for (const sx of [-.04, .04]){ const pts = []; for (let i = 0; i <= 40; i++){ const a = i / 40 * 5 * TAU; pts.push(new V3(sx - Math.sign(sx) * i / 40 * .004, .022 + Math.sin(a) * .005, sz + Math.cos(a) * .005)); } springs.push(tube(pts, .0006, 80, 4)); }
-  addMesh(p, mergeGeos(springs), MAT.satin());
-}
-// Battery cells
-{
-  const p = makePart('cells', 'Battery cells', 'Two battery cells. They store the electricity, ready for when you switch the light on.', lantern, 'lantern');
-  const wrap = canvasTex(256, 64, (x, w, h) => { x.fillStyle = '#3f86c4'; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,255,255,.9)'; x.font = '400 30px "Londrina Solid", Arial, sans-serif'; x.textBaseline = 'middle'; x.fillText('3.7 V  ⚡  2600 mAh', 22, h / 2 + 2); x.fillStyle = '#c8553d'; x.fillRect(0, 0, 12, h); });
-  const cellMat = new THREE.MeshPhysicalMaterial({ map: wrap, roughness: .35, clearcoat: .5 });
-  for (const sz of [-.019, .019]){
-    const g = new THREE.CylinderGeometry(.0092, .0092, .065, 32, 1, true); g.rotateY(Math.PI / 2); g.rotateZ(-Math.PI / 2); g.translate(0, .022, sz);
-    addMesh(p, g, cellMat);
-    addMesh(p, mergeGeos([cylX(.0088, -.0335, -.0325, 24).translate(0, .022, sz), cylX(.0088, .0325, .0335, 24).translate(0, .022, sz), cylX(.0035, .0335, .0365, 16).translate(0, .022, sz)]), MAT.satin());
-  }
-}
-// Circuit board with the charging socket
-{
-  const p = makePart('board', 'Circuit board', 'The lantern’s brain. It sends electricity to the lights, and when you charge, it fills the battery carefully so it never gets too full.', lantern, 'lantern');
-  addMesh(p, new THREE.BoxGeometry(.1, .0018, .07).translate(0, .041, -.008), MAT.pcb());
-  const chips = [new THREE.BoxGeometry(.014, .003, .014).translate(.018, .0434, .0), new THREE.BoxGeometry(.008, .0025, .006).translate(-.02, .0432, .01), new THREE.BoxGeometry(.008, .0025, .006).translate(-.03, .0432, -.01)];
-  addMesh(p, mergeGeos(chips), MAT.dark());
-  addMesh(p, roundedBox(.012, .005, .009, .0015).translate(-.058, .0306, 0), MAT.satin());
-  addMesh(p, mergeGeos([
-    tube([new V3(.0365, .022, -.019), new V3(.04, .032, -.02), new V3(.035, .04, -.018)], .0009, 10, 5)
-  ]), new THREE.MeshStandardMaterial({ color: 0xc23b3b, roughness: .5 }));
-  addMesh(p, mergeGeos([
-    tube([new V3(-.0335, .022, .019), new V3(-.038, .032, .02), new V3(-.034, .04, .018)], .0009, 10, 5)
-  ]), MAT.dark());
-}
-// Button and battery lights on the front of the base
-const dotMats = [];
-{
-  const p = makePart('controls', 'Button and battery lights', 'Press the button to switch the light on. The four little lights show how full the battery is.', lantern, 'lantern');
-  const icon = canvasTex(128, 128, x => { x.strokeStyle = '#ffffff'; x.lineWidth = 12; x.lineCap = 'round'; x.beginPath(); x.arc(64, 68, 34, -Math.PI / 2 + .6, -Math.PI / 2 - .6 + TAU); x.stroke(); x.beginPath(); x.moveTo(64, 24); x.lineTo(64, 62); x.stroke(); });
-  addMesh(p, cylZ(.0095, .062, .068, 32).translate(0, .038, 0), MAT.trim());
-  const lab = new THREE.Mesh(new THREE.CircleGeometry(.0065, 24).translate(0, .038, .0682), new THREE.MeshBasicMaterial({ map: icon, transparent: true, depthWrite: false }));
-  lab.raycast = () => {}; p.group.add(lab);
-  for (let i = 0; i < 4; i++){
-    const m = new THREE.MeshStandardMaterial({ color: 0x3a4148, emissive: 0x000000, roughness: .3 }); dotMats.push(m); MANAGED.add(m);
-    addMesh(p, cylZ(.0026, .064, .0665, 16).translate(-.0165 + i * .011, .017, 0), m);
-  }
-}
-// Top deck of the base
-{
-  const p = makePart('deck', 'Top plate', 'A white plate that closes the base and holds the lights up.', lantern, 'lantern');
-  addMesh(p, roundedBox(.122, .005, .122, .002).translate(0, .0605, 0), MAT.white(), { shell: true });
-}
-// LED lights
-let ledMat, glowLight;
-{
-  const p = makePart('leds', 'LED lights', 'Tiny lights that glow when electricity flows through them. They use very little electricity, so the battery lasts longer.', lantern, 'lantern');
-  addMesh(p, roundedBox(.022, .1, .022, .003).translate(0, .113, 0), MAT.white());
-  ledMat = new THREE.MeshStandardMaterial({ color: 0xfff1c9, emissive: 0x000000, roughness: .3 }); MANAGED.add(ledMat);
-  const leds = [];
-  for (let k = 0; k < 4; k++) for (let j = 0; j < 5; j++){ const b = new THREE.BoxGeometry(.008, .008, .002); b.translate(0, .075 + j * .018, .0115); b.rotateY(k * Math.PI / 2); leds.push(b); }
-  addMesh(p, mergeGeos(leds), ledMat);
-  glowLight = new THREE.PointLight(0xffc06a, 0, .9, 2); glowLight.position.set(0, .13, 0); p.group.add(glowLight);
-}
-// Frosted globe with a face
-let globeMat;
+
+/* ================================================================ THE GIANT BATTERY */
+// layout (metres): the battery stands upright on a stand; minus end at the bottom, plus end on top
+const BR = .075, Y0 = .032, BH = .3, YT = Y0 + BH, NUB_TOP = YT + .024;
+const MID = Y0 + BH / 2;                      // the thin wall between the two sides
+const WIN = { c: 1.0, w: 1.6, y0: Y0 + .034, y1: YT - .034 };   // window cut into the wrapper
+const FACE = { c: -.5, w: 1.2, y: Y0 + BH * .66, h: .08 };       // face painted on the wrapper
+const SHELF_R = BR - .022, CHANNEL_R = BR - .012;
+const MINUS_Y = [MID - .025, MID - .053, MID - .081, MID - .109];  // tops of the grey shelves
+const PLUS_Y = [MID + .016, MID + .044, MID + .072, MID + .1];     // tops of the purple shelves
+const battery = new THREE.Group(); scene.add(battery);
+
+// Wrapper with the face
 const faceTex = canvasTex(512, 400, () => {});
 let faceMood = '';
 function drawFace(mood){
@@ -539,31 +476,110 @@ function drawFace(mood){
 }
 if (document.fonts) document.fonts.ready.then(() => { faceMood = ''; });
 {
-  const p = makePart('globe', 'Frosted cover', 'The see-through cover spreads the light out softly, so it isn’t too bright for your eyes.', lantern, 'lantern');
-  globeMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .5, transparent: true, opacity: .62, clearcoat: .4, emissive: 0x000000, side: DS }); MANAGED.add(globeMat);
-  addMesh(p, roundedBox(.118, .14, .118, .012).translate(0, .133, 0), globeMat, { shell: true, shadow: false });
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(.1, .078).translate(0, .14, .0595), new THREE.MeshStandardMaterial({ map: faceTex, transparent: true, depthWrite: false, roughness: .5 }));
+  const p = makePart('wrapper', 'Wrapper', 'The battery’s coat. It keeps everything inside safe and dry. We cut a window in it so we can peek inside.', battery, 'battery');
+  const body = new THREE.MeshPhysicalMaterial({ color: SRGB('#e2a93b'), roughness: .5, clearcoat: .15, side: DS });
+  const band = new THREE.MeshPhysicalMaterial({ color: SRGB('#2f7d6d'), roughness: .5, clearcoat: .15, side: DS });
+  addMesh(p, cylYPart(BR, WIN.y0, WIN.y1, WIN.c + WIN.w / 2, TAU - WIN.w, true, 96), body, { shell: true });
+  addMesh(p, mergeGeos([cylYPart(BR, Y0 + .006, WIN.y0, 0, TAU, true, 96), cylYPart(BR, WIN.y1, YT - .002, 0, TAU, true, 96)]), band, { shell: true });
+  addMesh(p, cylYPart(BR - .003, WIN.y0, WIN.y1, WIN.c + WIN.w / 2, TAU - WIN.w, true, 96), MAT.satin(), { shell: true });
+  const face = new THREE.Mesh(cylYPart(BR + .0008, FACE.y - FACE.h / 2, FACE.y + FACE.h / 2, FACE.c - FACE.w / 2, FACE.w, true, 48),
+    new THREE.MeshStandardMaterial({ map: faceTex, transparent: true, depthWrite: false, roughness: .5, side: THREE.FrontSide }));
   face.raycast = () => {}; p.group.add(face);
   const fm = face.material; fm.userData.base = fm.color.clone(); fm.userData.op = 1; shellMats.push(fm);
 }
 drawFace('happy');
-// Top cap and handle
+// Minus end (bottom cap)
 {
-  const p = makePart('cap', 'Top cap', 'The lid on top. It keeps dust and rain out.', lantern, 'lantern');
-  addMesh(p, roundedBox(.13, .024, .13, .01).translate(0, .215, 0), new THREE.MeshPhysicalMaterial({ color: SRGB('#2f7d6d'), roughness: .5, clearcoat: .15, side: DS }));
+  const p = makePart('minusEnd', 'Minus end', 'The flat bottom of the battery. One wire joins here. Electricity leaves the battery from this end.', battery, 'battery');
+  addMesh(p, cylYPart(BR, Y0, Y0 + .007, 0, TAU, false, 96), MAT.satin());
 }
+// Grey shelves: the minus side
 {
-  const p = makePart('handle', 'Handle', 'For carrying the lantern, or hanging it up in a tent.', lantern, 'lantern');
+  const p = makePart('minusLayers', 'Minus side', 'The grey shelves at the bottom. When the battery is full, the gold energy balls rest here.', battery, 'battery');
+  addMesh(p, mergeGeos(MINUS_Y.map(y => cylYPart(SHELF_R, y - .004, y, 0, TAU, false, 64))), new THREE.MeshStandardMaterial({ color: SRGB('#4e4a52'), roughness: .8, side: DS }));
+  addMesh(p, cylYPart(.006, Y0 + .007, MINUS_Y[0], 0, TAU, false, 16), MAT.satin());
+}
+// The thin wall in the middle
+{
+  const p = makePart('separator', 'Thin wall', 'A thin wall full of tiny holes, between the minus side and the plus side. The energy balls can squeeze through it.', battery, 'battery');
+  const sepTex = canvasTex(256, 256, (x, w) => { x.fillStyle = '#f7efdc'; x.fillRect(0, 0, w, w); x.fillStyle = '#c9b99a'; for (let i = 0; i < 32; i++) for (let j = 0; j < 32; j++){ x.beginPath(); x.arc(4 + i * 8, 4 + j * 8, 2.2, 0, TAU); x.fill(); } });
+  const g = new THREE.CircleGeometry(BR - .004, 64); g.rotateX(-Math.PI / 2); g.translate(0, MID, 0);
+  addMesh(p, g, new THREE.MeshStandardMaterial({ map: sepTex, roughness: .9, transparent: true, opacity: .8, side: DS }), { shadow: false });
+}
+// Purple shelves: the plus side
+{
+  const p = makePart('plusLayers', 'Plus side', 'The purple shelves at the top. The energy balls climb up here as the battery is used.', battery, 'battery');
+  addMesh(p, mergeGeos(PLUS_Y.map(y => cylYPart(SHELF_R, y - .004, y, 0, TAU, false, 64))), new THREE.MeshStandardMaterial({ color: SRGB('#7b4f9e'), roughness: .6, side: DS }));
+  addMesh(p, cylYPart(.006, PLUS_Y[3], YT, 0, TAU, false, 16), MAT.satin());
+}
+// Plus end (top cap with the bump)
+{
+  const p = makePart('plusEnd', 'Plus end', 'The top of the battery, with a little bump. The other wire joins here, and electricity comes back in at this end.', battery, 'battery');
+  addMesh(p, cylYPart(BR, YT - .002, YT + .004, 0, TAU, false, 96), MAT.satin());
+  addMesh(p, mergeGeos([cylYPart(.028, YT + .004, NUB_TOP - .003, 0, TAU, false, 48), cylYPart(.025, NUB_TOP - .003, NUB_TOP, 0, TAU, false, 48)]), MAT.satin());
+}
+// signs next to the two ends
+const signs = [];
+{
+  const plus = textSprite('+  plus end', .02, { bg: 'rgba(247,239,220,.92)' }); plus.position.set(-.085, NUB_TOP + .012, .03); scene.add(plus); signs.push(plus);
+  const minus = textSprite('–  minus end', .02, { bg: 'rgba(247,239,220,.92)' }); minus.position.set(-.13, Y0 + .012, .09); scene.add(minus); signs.push(minus);
+}
+
+// The stand, with four charge lights on the front and a socket for the charger
+const dotMats = [];
+const PORT = new V3(-.1, .016, 0);
+{
+  const p = makePart('stand', 'Battery stand', 'Holds the battery up. Its four little lights show how full the battery is, and the charger plugs into its side.', scene, 'prop');
+  addMesh(p, roundedBox(.2, .032, .17, .01).translate(0, .016, 0), MAT.white());
+  addMesh(p, cylYPart(BR + .006, .028, .036, 0, TAU, false, 64), new THREE.MeshPhysicalMaterial({ color: SRGB('#2f7d6d'), roughness: .5, side: DS }));
+  addMesh(p, roundedBox(.003, .008, .014, .001).translate(PORT.x - .001, PORT.y, PORT.z), MAT.dark());
+  for (let i = 0; i < 4; i++){
+    const m = new THREE.MeshStandardMaterial({ color: 0x3a4148, emissive: 0x000000, roughness: .3 }); dotMats.push(m); MANAGED.add(m);
+    addMesh(p, cylZ(.004, .084, .0865, 20).translate(-.027 + i * .018, .016, 0), m);
+  }
+}
+
+/* ================================================================ THE LANTERN (powered by the battery) */
+const LX = .32, LZ = .02;
+const lantern = new THREE.Group(); lantern.position.set(LX, 0, LZ); scene.add(lantern);
+let ledMat, globeMat, glowLight;
+const T_MINUS = new V3(LX - .066, .022, LZ + .022), T_PLUS = new V3(LX - .066, .042, LZ - .022);   // wire terminals on the lantern's side
+{
+  const p = makePart('lantern', 'Lantern', 'A little lantern. It has no battery of its own, so it takes its electricity from the giant battery through the two wires.', lantern, 'prop');
+  const teal = new THREE.MeshPhysicalMaterial({ color: SRGB('#2f7d6d'), roughness: .5, clearcoat: .15, side: DS });
+  addMesh(p, roundedBox(.13, .055, .13, .012).translate(0, .0315, 0), teal);
+  addMesh(p, mergeGeos([cylX(.005, -.072, -.064, 16).translate(0, .022, .022), cylX(.005, -.072, -.064, 16).translate(0, .042, -.022)]), MAT.satin());
+  const icon = canvasTex(128, 128, x => { x.strokeStyle = '#ffffff'; x.lineWidth = 12; x.lineCap = 'round'; x.beginPath(); x.arc(64, 68, 34, -Math.PI / 2 + .6, -Math.PI / 2 - .6 + TAU); x.stroke(); x.beginPath(); x.moveTo(64, 24); x.lineTo(64, 62); x.stroke(); });
+  addMesh(p, cylZ(.0095, .062, .068, 32).translate(0, .032, 0), MAT.trim());
+  const lab = new THREE.Mesh(new THREE.CircleGeometry(.0065, 24).translate(0, .032, .0682), new THREE.MeshBasicMaterial({ map: icon, transparent: true, depthWrite: false }));
+  lab.raycast = () => {}; p.group.add(lab);
+  addMesh(p, roundedBox(.122, .005, .122, .002).translate(0, .0605, 0), MAT.white());
+  addMesh(p, roundedBox(.022, .1, .022, .003).translate(0, .113, 0), MAT.white());
+  ledMat = new THREE.MeshStandardMaterial({ color: 0xfff1c9, emissive: 0x000000, roughness: .3 }); MANAGED.add(ledMat);
+  const leds = [];
+  for (let k = 0; k < 4; k++) for (let j = 0; j < 5; j++){ const b = new THREE.BoxGeometry(.008, .008, .002); b.translate(0, .075 + j * .018, .0115); b.rotateY(k * Math.PI / 2); leds.push(b); }
+  addMesh(p, mergeGeos(leds), ledMat);
+  glowLight = new THREE.PointLight(0xffc06a, 0, .9, 2); glowLight.position.set(0, .13, 0); p.group.add(glowLight);
+  globeMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .5, transparent: true, opacity: .62, clearcoat: .4, emissive: 0x000000, side: DS }); MANAGED.add(globeMat);
+  addMesh(p, roundedBox(.118, .14, .118, .012).translate(0, .133, 0), globeMat, { shadow: false });
+  addMesh(p, roundedBox(.13, .024, .13, .01).translate(0, .215, 0), teal);
   const h = new THREE.TorusGeometry(.042, .0055, 12, 40, Math.PI); h.translate(0, .227, 0);
   addMesh(p, h, new THREE.MeshPhysicalMaterial({ color: SRGB('#e2a93b'), roughness: .45, clearcoat: .15, side: DS }));
-  addMesh(p, mergeGeos([cylY(.008, .226, .232, 16).translate(-.042, 0, 0), cylY(.008, .226, .232, 16).translate(.042, 0, 0)]), MAT.trim());
+}
+// The two wires joining the battery's ends to the lantern
+const MINUS_WIRE = [new V3(.1, .012, .03), new V3(.15, .004, .05), new V3(.22, .004, .05), new V3(T_MINUS.x - .03, .012, T_MINUS.z), T_MINUS.clone().setX(T_MINUS.x - .006)];
+const PLUS_WIRE = [new V3(0, NUB_TOP, 0), new V3(.01, NUB_TOP + .05, 0), new V3(.11, NUB_TOP + .06, -.01), new V3(.21, .2, -.01), new V3(T_PLUS.x - .035, .06, T_PLUS.z), T_PLUS.clone().setX(T_PLUS.x - .006)];
+{
+  const p = makePart('wires', 'Wires', 'Two wires make a loop: out of the battery’s minus end, through the lantern, and back into the plus end. Electricity can only flow when the loop is joined up.', scene, 'prop');
+  addMesh(p, tube(MINUS_WIRE, .0028, 60, 8), MAT.dark());
+  addMesh(p, tube(PLUS_WIRE, .0028, 80, 8), new THREE.MeshStandardMaterial({ color: SRGB('#c8553d'), roughness: .5, side: DS }));
 }
 
 /* ================================================================ CHARGER AND CABLE */
-const SOCK = { x: -.24, y: .26 };
+const SOCK = { x: -.27, y: .26 };
 let chargerLedMat;
 {
-  const p = makePart('charger', 'Charger', 'Plugs into the wall and sends electricity down the cable into the lantern’s battery. Its light is red while charging and green when the battery is full.', scene, 'prop');
+  const p = makePart('charger', 'Charger', 'Plugs into the wall and sends electricity down the cable into the battery. Its light is red while charging and green when the battery is full.', scene, 'prop');
   addMesh(p, roundedBox(.1, .1, .009, .003).translate(SOCK.x + .022, SOCK.y, WALL_Z + .0045), MAT.white());
   addMesh(p, roundedBox(.02, .032, .007, .0022).translate(SOCK.x + .05, SOCK.y, WALL_Z + .0125), MAT.white());
   addMesh(p, roundedBox(.044, .058, .034, .008).translate(SOCK.x, SOCK.y - .004, WALL_Z + .026), MAT.white());
@@ -571,19 +587,17 @@ let chargerLedMat;
   addMesh(p, cylZ(.0022, WALL_Z + .042, WALL_Z + .0436, 16).translate(SOCK.x + .012, SOCK.y + .016, 0), chargerLedMat);
   addMesh(p, roundedBox(.012, .006, .006, .0015).translate(SOCK.x, SOCK.y - .034, WALL_Z + .026), MAT.dark());
 }
-const PORT = new V3(-.065, .0306, 0);   // charging socket on the left side of the lantern
-const CABLE_FIXED = [new V3(SOCK.x, SOCK.y - .036, WALL_Z + .026), new V3(SOCK.x + .002, SOCK.y - .1, WALL_Z + .034), new V3(SOCK.x + .02, .05, WALL_Z + .05), new V3(SOCK.x + .05, .004, WALL_Z + .09), new V3(-.17, .004, -.09)];
-const CABLE_IN = [new V3(-.13, .006, -.025), new V3(-.096, .02, -.004), new V3(-.082, PORT.y, 0)];
-const CABLE_OUT = [new V3(-.16, .004, -.05), new V3(-.15, .004, -.03), new V3(-.138, .005, -.016)];
+const CABLE_FIXED = [new V3(SOCK.x, SOCK.y - .036, WALL_Z + .026), new V3(SOCK.x + .002, SOCK.y - .1, WALL_Z + .034), new V3(SOCK.x + .01, .05, WALL_Z + .05), new V3(SOCK.x + .02, .004, WALL_Z + .09), new V3(-.24, .004, -.12)];
+const CABLE_IN = [new V3(-.2, .006, -.03), new V3(-.15, .012, -.004), new V3(-.124, PORT.y, 0)];
+const CABLE_OUT = [new V3(-.23, .004, -.07), new V3(-.215, .004, -.05), new V3(-.2, .005, -.035)];
 let cableMesh, cableCurve, cablePlug, cableK = -1;
 {
-  const p = makePart('cable', 'Charging cable', 'A wire that carries electricity from the charger to the lantern.', scene, 'prop');
+  const p = makePart('cable', 'Charging cable', 'A wire that carries electricity from the charger to the battery.', scene, 'prop');
   cableMesh = addMesh(p, new THREE.BufferGeometry(), MAT.white());
   cablePlug = new THREE.Group(); p.group.add(cablePlug);
   addMesh(p, roundedBox(.012, .007, .022, .003).translate(0, 0, -.011), MAT.white(), { parent: cablePlug });
   addMesh(p, roundedBox(.0085, .0028, .008, .0012).translate(0, 0, .004), MAT.satin(), { parent: cablePlug });
 }
-const tmpPts = [];
 function setCable(k){
   if (Math.abs(k - cableK) < 1e-4) return; cableK = k;
   const e = easeIO(k), ends = CABLE_IN.map((a, i) => a.clone().lerp(CABLE_OUT[i], 1 - e));
@@ -593,68 +607,46 @@ function setCable(k){
   cablePlug.position.copy(end).addScaledVector(tan, .011); cablePlug.lookAt(cablePlug.position.clone().add(tan));
 }
 
-/* ================================================================ GIANT CELL (a cut-away model of one cell) */
-const G = new V3(.36, .1, .02);
-const giant = new THREE.Group(); giant.position.copy(G); scene.add(giant);
-const CELL_R = .068, CELL_L = .3, WEDGE = { ts: .3, tl: TAU - 2.35 };
-const ANODE_X = [-.13, -.1, -.07, -.04, -.012], CATH_X = [.012, .04, .07, .1, .13];
-const ballsMax = 48;
-let bulbMat;
-{
-  const p = makePart('giantCell', 'Inside one battery cell (made giant)', 'A huge model of one battery cell, cut open. The gold balls are tiny bits of energy (lithium) that move from side to side.', giant, 'prop');
-  addMesh(p, cylXCut(CELL_R, -CELL_L / 2, CELL_L / 2, WEDGE.ts, WEDGE.tl, true, 64), new THREE.MeshPhysicalMaterial({ color: SRGB('#3f86c4'), roughness: .45, clearcoat: .2, side: DS }));
-  addMesh(p, cylXCut(CELL_R - .002, -CELL_L / 2 + .002, CELL_L / 2 - .002, WEDGE.ts, WEDGE.tl, true, 64), MAT.satin());
-  addMesh(p, mergeGeos([cylXCut(CELL_R, -CELL_L / 2 - .004, -CELL_L / 2, WEDGE.ts, WEDGE.tl), cylXCut(CELL_R, CELL_L / 2, CELL_L / 2 + .004, WEDGE.ts, WEDGE.tl), cylX(.022, CELL_L / 2 + .004, CELL_L / 2 + .016, 32)]), MAT.satin());
-  // minus side: grey graphite layers; plus side: purple layers; separator in the middle
-  addMesh(p, mergeGeos(ANODE_X.map(x => cylXCut(CELL_R - .006, x - .0025, x + .0025, WEDGE.ts, WEDGE.tl))), new THREE.MeshStandardMaterial({ color: SRGB('#4e4a52'), roughness: .8, side: DS }));
-  addMesh(p, mergeGeos(CATH_X.map(x => cylXCut(CELL_R - .006, x - .0025, x + .0025, WEDGE.ts, WEDGE.tl))), new THREE.MeshStandardMaterial({ color: SRGB('#7b4f9e'), roughness: .6, side: DS }));
-  const sepTex = canvasTex(128, 128, (x, w) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, w); x.fillStyle = '#c9d6dd'; for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++){ x.beginPath(); x.arc(4 + i * 8, 4 + j * 8, 2.2, 0, TAU); x.fill(); } });
-  addMesh(p, cylXCut(CELL_R - .004, -.0012, .0012, WEDGE.ts, WEDGE.tl), new THREE.MeshStandardMaterial({ map: sepTex, roughness: .9, transparent: true, opacity: .85, side: DS }));
-  // stand
-  addMesh(p, mergeGeos([roundedBox(.03, .036, .1, .006).translate(-.09, -CELL_R - .018 + .006, 0), roundedBox(.03, .036, .1, .006).translate(.09, -CELL_R - .018 + .006, 0), roundedBox(.26, .01, .11, .004).translate(0, -G.y + .005, 0)]), MAT.white());
-  // outside wire with a little bulb: minus end -> bulb -> plus end
-  addMesh(p, tube([new V3(-CELL_L / 2 - .004, 0, 0), new V3(-CELL_L / 2 - .03, .03, 0), new V3(-.1, CELL_R + .05, 0), new V3(0, CELL_R + .06, 0), new V3(.1, CELL_R + .05, 0), new V3(CELL_L / 2 + .04, .03, 0), new V3(CELL_L / 2 + .016, 0, 0)], .0022, 80, 6), MAT.dark());
-  bulbMat = new THREE.MeshPhysicalMaterial({ color: 0xfff4d6, roughness: .1, transparent: true, opacity: .85, emissive: 0x000000 }); MANAGED.add(bulbMat);
-  addMesh(p, new THREE.SphereGeometry(.014, 24, 16).translate(0, CELL_R + .072, 0), bulbMat);
-  addMesh(p, cylY(.008, CELL_R + .052, CELL_R + .062, 16), MAT.satin());
-}
-// signs
-{
-  const minus = textSprite('–  minus side', .022, { bg: 'rgba(247,239,220,.92)' }); minus.position.set(-.08, -CELL_R - .03, .07); giant.add(minus);
-  const plus = textSprite('+  plus side', .022, { bg: 'rgba(247,239,220,.92)' }); plus.position.set(.08, -CELL_R - .03, .07); giant.add(plus);
-}
-// the energy balls
+/* ---------------------------------------------------------------- the energy balls */
+const ballsMax = 40, BALL_R = .0068;
 const ballMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshStandardMaterial({ color: SRGB('#e2a93b'), emissive: SRGB('#4a2e00'), roughness: .35, metalness: .15 }), ballsMax);
-ballMesh.castShadow = false; ballMesh.raycast = () => {}; giant.add(ballMesh);
+ballMesh.castShadow = false; ballMesh.raycast = () => {}; battery.add(ballMesh);
 const balls = [];
 {
-  const slot = (xs, i) => {
-    const g = i % 4, x = (xs[g] + xs[g + 1]) / 2;
-    // keep balls inside the cut-away so they can be seen
-    const a = rand(-.9, 1.5), r = rand(.012, CELL_R - .014);
-    return new V3(x, r * Math.sin(a) * .9, r * Math.cos(a) * .9);
-  };
-  for (let i = 0; i < ballsMax; i++) balls.push({ a: slot(ANODE_X, i), c: slot(CATH_X, i), p: 0, mid: new V3(0, rand(-.03, .04), rand(-.02, .04)), wob: rand(0, TAU) });
+  // each ball has a seat on a grey shelf and a seat on a purple shelf, both inside the window so they can be seen;
+  // it travels out to the gap by the wrapper, climbs through the thin wall, and back in
+  const seat = (y, th) => { const r = rand(.012, SHELF_R - .008); return new V3(r * Math.sin(th), y + BALL_R, r * Math.cos(th)); };
+  for (let i = 0; i < ballsMax; i++){
+    const ta = WIN.c + rand(-.5, .5), tc = WIN.c + rand(-.5, .5);
+    const a = seat(MINUS_Y[i % 4], ta), c = seat(PLUS_Y[(i * 3 + 1) % 4], tc);
+    const aOut = new V3(CHANNEL_R * Math.sin(ta), a.y + .004, CHANNEL_R * Math.cos(ta));
+    const cOut = new V3(CHANNEL_R * Math.sin(tc), c.y + .004, CHANNEL_R * Math.cos(tc));
+    balls.push({ a, c, path: new THREE.CatmullRomCurve3([a, aOut, cOut, c], false, 'centripetal'), p: 0, wob: rand(0, TAU) });
+  }
 }
 
-/* ---------------------------------------------------------------- explode layout: parts lift straight up */
+/* ---------------------------------------------------------------- explode layout: the battery comes apart upwards, the wrapper slides off to the side */
 scene.updateMatrixWorld(true);
-const STACK = ['baseShell', 'holder', 'cells', 'board', 'controls', 'deck', 'leds', 'globe', 'cap', 'handle'];
+const STACK = ['minusEnd', 'minusLayers', 'separator', 'plusLayers', 'plusEnd'];
 let stackTop = 0;
 {
   const boxes = STACK.map(id => new THREE.Box3().setFromObject(parts[id].group));
   let hi = boxes[0].max.y;
   STACK.forEach((id, i) => {
     const p = parts[id], b = boxes[i];
-    if (i > 0){ const lo = hi + .03; p.dist = lo - b.min.y; hi = lo + (b.max.y - b.min.y); }
+    p.off = new V3();
+    if (i > 0){ const lo = hi + .04; p.off.y = lo - b.min.y; hi = lo + (b.max.y - b.min.y); }
     p.rank = i / (STACK.length - 1);
-    p.side = i % 2 ? 'left' : 'right'; p.stem = [24, 56][Math.floor(i / 2) % 2];
+    p.side = 'right'; p.stem = [28, 64][i % 2];
     const c = b.getCenter(new V3());
-    p.anchor.copy(p.group.worldToLocal(new V3(p.side === 'right' ? b.max.x : b.min.x, c.y, c.z)));
+    p.anchor.copy(p.group.worldToLocal(new V3(b.max.x, c.y, c.z)));
   });
   stackTop = hi;
+  const w = parts.wrapper, wb = new THREE.Box3().setFromObject(w.group), wc = wb.getCenter(new V3());
+  w.off = new V3(-.24, 0, 0); w.rank = 0; w.side = 'left'; w.stem = 28;
+  w.anchor.copy(w.group.worldToLocal(new V3(wb.min.x, wc.y + .05, wc.z)));
 }
-for (const p of partList) p.base.copy(p.group.position);
+for (const p of partList){ p.base.copy(p.group.position); if (!p.off) p.off = new V3(); }
 
 /* ---------------------------------------------------------------- point flows */
 const pointVS = `attribute float aAlpha; attribute float aSize; varying float vA; uniform float uScale;
@@ -680,29 +672,25 @@ function makeFlow(parent, getPaths, n, size, speed, token){
       u[i] += dt * speed / len; if (u[i] > 1) u[i] -= 1;
       const q = path.getPointAt(u[i]);
       pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z;
-      alpha[i] = this.vis * .95 * smooth(0, .05, u[i]) * (1 - smooth(.93, 1, u[i])); sz[i] = size;
+      alpha[i] = this.vis * .95 * smooth(0, .04, u[i]) * (1 - smooth(.95, 1, u[i])); sz[i] = size;
     }
     g.attributes.position.needsUpdate = true; g.attributes.aAlpha.needsUpdate = true; g.attributes.aSize.needsUpdate = true;
   } };
 }
-const CRv = pts => new THREE.CatmullRomCurve3(pts.map(a => new V3(...a)));
-// lantern: battery -> board -> up the LED post (both cells)
-const usePaths = [CRv([[.0365, .022, -.019], [.04, .032, -.02], [.02, .043, -.01], [.0, .05, .0], [0, .07, .008], [0, .16, .012]]), CRv([[-.0335, .022, .019], [-.038, .032, .02], [-.02, .043, .01], [0, .05, 0], [0, .07, -.008], [0, .16, -.012]])];
-const lanternUse = makeFlow(lantern, () => usePaths, 28, .0035, .07, '--volt');
-// charging: along the cable -> socket -> board -> into the cells
-const chargeIn = [CRv([[-.06, .0306, 0], [-.04, .037, 0], [-.01, .043, -.01], [.035, .04, -.018], [.03, .022, -.019], [0, .022, -.019]]), CRv([[-.06, .0306, 0], [-.04, .037, 0], [-.02, .043, .01], [-.034, .04, .018], [-.03, .022, .019], [0, .022, .019]])];
-const cablePathFn = () => [cableCurve];
-const cableFlow = makeFlow(scene, cablePathFn, 40, .0035, .18, '--teal');
-const lanternCharge = makeFlow(lantern, () => chargeIn, 24, .0035, .06, '--teal');
-// giant cell outside wire: minus -> bulb -> plus when in use; reversed when charging
-const loopPts = [[-CELL_L / 2 - .004, 0, 0], [-CELL_L / 2 - .03, .03, 0], [-.1, CELL_R + .05, 0], [0, CELL_R + .06, 0], [.1, CELL_R + .05, 0], [CELL_L / 2 + .04, .03, 0], [CELL_L / 2 + .016, 0, 0]];
-const loopUse = [CRv(loopPts)], loopCharge = [CRv(loopPts.slice().reverse())];
-const giantUse = makeFlow(giant, () => loopUse, 22, .006, .08, '--volt');
-const giantCharge = makeFlow(giant, () => loopCharge, 22, .006, .08, '--teal');
+// using: out of the minus end, along the dark wire, through the lantern, back along the red wire into the plus end
+const usePath = new THREE.CatmullRomCurve3([
+  new V3(0, Y0 + .004, 0), new V3(.06, .02, .015), ...MINUS_WIRE, new V3(LX - .04, .06, LZ), new V3(LX, .1, LZ), new V3(LX - .04, .07, LZ - .02),
+  ...PLUS_WIRE.slice().reverse(), new V3(0, YT - .01, 0)
+], false, 'centripetal');
+const lanternUse = makeFlow(scene, () => [usePath], 46, .0045, .12, '--volt');
+// charging: down the cable, into the stand and up into the battery's minus end
+const chargeIn = new THREE.CatmullRomCurve3([PORT.clone().setX(PORT.x + .004), new V3(-.06, .016, 0), new V3(-.015, .022, 0), new V3(0, Y0 + .004, 0)]);
+const cableFlow = makeFlow(scene, () => [cableCurve], 40, .0038, .18, '--teal');
+const standCharge = makeFlow(scene, () => [chargeIn], 10, .0045, .06, '--teal');
 
 /* ---------------------------------------------------------------- state */
 const S = { explode: false, ep: 0, xray: false, xr: 0, step: 0, hovered: null, stepHL: new Set(),
-  charge: .8, on: true, plugged: false, plugK: 0, bright: 0, flatT: 0 };
+  charge: .8, on: true, plugged: false, plugK: 0, bright: 0 };
 const DRAIN = 1 / 40, FILL = 1 / 22;
 const powered = () => S.on && (S.charge > 0 || S.plugK > .98);
 
@@ -726,7 +714,7 @@ new MutationObserver(readTheme).observe(document.documentElement, { attributes: 
 /* ---------------------------------------------------------------- explode labels */
 const labelLayer = $('#labels');
 for (const p of partList){
-  if (p.row !== 'lantern') continue;
+  if (p.row !== 'battery') continue;
   const el = document.createElement('div');
   el.className = 'lbl ' + p.side;
   el.style.setProperty('--stem', p.stem + 'px');
@@ -771,14 +759,13 @@ function resize(){
   for (const m of pointMats) m.uniforms.uScale.value = scale;
 }
 const VIEWS = {
-  overview: { t: [.13, .12, -.02], d: [-.15, .42, 1], w: .7, h: .36 },
-  front: { t: [0, .12, 0], d: [.25, .25, 1], w: .26, h: .28 },
-  inside: { t: [0, .034, 0], d: [.3, .32, 1], w: .2, h: .15 },
-  cell: { t: [G.x, G.y + .02, G.z], d: [.08, .32, 1], w: .4, h: .26 },
-  cellClose: { t: [G.x, G.y + .015, G.z + .01], d: [.05, .38, 1], w: .4, h: .24 },
-  charger: { t: [-.12, .12, -.12], d: [-.25, .4, 1], w: .4, h: .32 }
+  overview: { t: [.03, .17, 0], d: [.12, .3, 1], w: .74, h: .42 },
+  ends: { t: [.02, .19, 0], d: [-.25, .22, 1], w: .4, h: .42 },
+  inside: { t: [0, MID, 0], d: [Math.sin(WIN.c), .2, Math.cos(WIN.c)], w: .2, h: .3 },
+  using: { t: [.15, .17, 0], d: [.35, .25, 1], w: .56, h: .38 },
+  charger: { t: [-.09, .16, -.06], d: [.5, .3, 1], w: .5, h: .4 }
 };
-function explodeView(){ return { t: [0, stackTop / 2 + .01, 0], d: [.2, .35, 1], w: .32, h: stackTop + .06 }; }
+function explodeView(){ return { t: [-.08, (stackTop + Y0) / 2, 0], d: [.28, .22, 1], w: .52, h: stackTop + .06 }; }
 function viewPose(v){
   const fov = camera.fov * Math.PI / 180, tn = 2 * Math.tan(fov / 2);
   const fw = Math.max(120, W - insets.left - insets.right), fh = Math.max(120, Hh - insets.top - insets.bottom);
@@ -798,29 +785,26 @@ controls.addEventListener('end', () => { dragging = false; });
 
 /* ---------------------------------------------------------------- walkthrough */
 const STEPS = [
-  { title: 'Hello, lantern!', view: 'overview', on: true, plug: false, hl: [],
-    body: 'This lantern has no wire, but it can still glow. That’s because it has a battery inside. A battery keeps electricity stored for later, a bit like a lunchbox keeps food for later. Let’s watch it go flat and then fill it up again. Press Next to start.',
-    spec: 'Look at the battery number at the top. Watch it go down while the light is on.' },
-  { title: 'Switch it on', view: 'front', on: true, plug: false, hl: ['controls', 'leds'],
-    body: 'Press the button and electricity flows out of the battery, up to the little lights. The four dots on the front show how full the battery is. All four means full. One means it’s nearly empty.',
-    spec: 'Press Light at the bottom to switch it off and on. When it’s off, the battery stops going down.' },
-  { title: 'What’s inside?', view: 'inside', xray: true, on: true, plug: false, hl: ['cells', 'board'],
-    body: 'Inside the base are two battery cells, the same kind you find in phones and laptops. Next to them is a little circuit board. It’s the lantern’s brain, and it sends the electricity to the lights.',
-    spec: 'Press Explode to take the lantern apart and see every piece.' },
-  { title: 'Inside one cell', view: 'cell', on: true, plug: false, hl: ['giantCell'],
-    body: 'This is one battery cell, made giant and cut open. It has two sides: a minus side and a plus side, with a thin wall in the middle. The gold balls are tiny bits of energy. When the battery is full, they are all squeezed into the minus side.',
-    spec: 'Count the gold balls on the grey minus side and on the purple plus side.' },
-  { title: 'Using the battery', view: 'cellClose', on: true, plug: false, minCharge: .6, hl: ['giantCell'],
-    body: 'When the light is on, the gold balls slowly move across the thin wall to the plus side. Each time one moves, it pushes a little electricity around the wire to the light. That’s what makes the light glow.',
-    spec: 'Watch a ball slip through the middle wall, and see the little bulb on top glow.' },
-  { title: 'Going flat', view: 'overview', on: true, plug: false, setCharge: .14, hl: ['cells'],
-    body: 'When all the gold balls have moved to the plus side, there is nothing left to push. The battery is flat! The light gets dim and then goes out, and the lantern gets very sleepy.',
-    spec: 'Watch the dots on the lantern go out one by one, until the light switches off.' },
+  { title: 'Hello, battery!', view: 'overview', on: true, plug: false, hl: [],
+    body: 'This is a battery, made giant so we can see inside. A battery keeps electricity stored for later, like a lunchbox keeps food for later. Right now it is making a little lantern glow. Let’s watch it go flat, and then fill it up again. Press Next to start.',
+    spec: 'Look at the battery number at the top. Watch it go down while the lantern is on.' },
+  { title: 'Plus and minus', view: 'ends', on: true, plug: false, hl: ['plusEnd', 'minusEnd', 'wires'],
+    body: 'Every battery has two ends. The plus end has a little bump on top. The minus end at the bottom is flat. One wire joins each end to the lantern, and together they make a loop. Electricity can only flow when the loop is joined up.',
+    spec: 'Find the bump on top. That’s how you know which way round a battery goes in a toy.' },
+  { title: 'Peek inside', view: 'inside', on: true, plug: false, hl: ['minusLayers', 'plusLayers', 'separator'],
+    body: 'We cut a window in the side so we can peek in. The grey shelves at the bottom are the minus side. The purple shelves at the top are the plus side. In the middle is a thin wall with tiny holes. The gold balls are tiny bits of energy.',
+    spec: 'Press See inside to make the battery’s coat see-through, or Explode to take it apart.' },
+  { title: 'Using the battery', view: 'using', on: true, plug: false, minCharge: .6, hl: ['wires'],
+    body: 'When the lantern is on, the gold balls climb up through the thin wall, one at a time. Each time one climbs, it pushes a little electricity out of the minus end, round the wires and through the lantern. That’s what makes the light glow.',
+    spec: 'Watch the orange dots go round the loop, and a gold ball climb to the top.' },
+  { title: 'Going flat', view: 'overview', on: true, plug: false, setCharge: .14, hl: [],
+    body: 'When all the gold balls have climbed to the top, there is nothing left to push. The battery is flat! The lantern gets dim and then goes dark, and the battery gets very sleepy.',
+    spec: 'Watch the four lights on the stand go out one by one.' },
   { title: 'Charging', view: 'charger', on: false, plug: true, maxCharge: .3, hl: ['charger', 'cable'],
-    body: 'To fill the battery up, we plug in the charger. Electricity from the wall goes down the cable and pushes the gold balls back to the minus side, like winding up a toy car. The charger’s light is red while it works.',
+    body: 'To fill the battery up, we plug in the charger. Electricity from the wall goes down the cable and pushes the gold balls back down to the bottom, like winding up a toy car. The charger’s light is red while it works.',
     spec: 'Press Charger at the bottom to plug it in or pull it out.' },
-  { title: 'Full again!', view: 'cell', on: false, plug: true, setCharge: .78, hl: ['giantCell'],
-    body: 'When every gold ball is back on the minus side, the battery is full and the charger light turns green. Batteries can be charged hundreds of times. Never poke, bend or wet a battery, and if one ever gets puffy or hot, tell a grown-up.',
+  { title: 'Full again!', view: 'charger', on: false, plug: true, setCharge: .78, hl: ['minusLayers'],
+    body: 'When every gold ball is back at the bottom, the battery is full and the charger light turns green. Batteries in phones, laptops and toys can be charged hundreds of times. Never poke, bend or wet a battery, and if one ever gets puffy or hot, tell a grown-up.',
     spec: 'Wait for the charger light to turn green, then press Charger to unplug and Light to switch the lantern on.' }
 ];
 const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
@@ -919,14 +903,14 @@ function updateReadout(){
   const b = Math.round(S.charge * 100);
   roBat.textContent = b + '%'; roMeter.firstElementChild.style.width = `calc(${b}% - 2px)`; roMeter.classList.toggle('low', b < 25);
   roLight.textContent = !S.on ? 'Off' : !powered() ? 'No power' : (S.bright < .6 && !S.explode) ? 'Dim' : 'On';
-  roState.textContent = S.explode ? 'Taken apart' : ({ charging: 'Charging, yum!', full: 'Full!', flat: 'Flat, needs charging', rest: 'Resting', tired: 'Getting sleepy', happy: 'Glowing' })[mood()];
+  roState.textContent = S.explode ? 'Taken apart' : ({ charging: 'Charging, yum!', full: 'Full of energy!', flat: 'Flat, needs charging', rest: 'Resting', tired: 'Getting sleepy', happy: 'Happy' })[mood()];
 }
 
 /* ---------------------------------------------------------------- frame update */
 function applyHighlight(p, k){
   for (const m of p.mats){ m.color.copy(m.userData.base).lerp(HL, .5 * k); if (m.emissive && !MANAGED.has(m)) m.emissive.copy(HL).multiplyScalar(.3 * k); }
 }
-const bm = new THREE.Matrix4(), bq = new THREE.Quaternion(), bp = new V3(), bs = new V3(), q1 = new V3(), q2 = new V3();
+const bm = new THREE.Matrix4(), bq = new THREE.Quaternion(), bp = new V3(), bs = new V3();
 function update(dt, t){
   const hold = S.explode || S.ep > .001;
 
@@ -941,7 +925,7 @@ function update(dt, t){
   if (plugIn && !hold) S.charge += FILL * dt;
   S.charge = clamp(S.charge, 0, 1);
 
-  // brightness: dims as the battery runs low, flickers at the very end
+  // lantern brightness: dims as the battery runs low, flickers at the very end
   let tb = 0;
   if (S.on && !hold){
     if (plugIn) tb = 1;
@@ -953,10 +937,9 @@ function update(dt, t){
   globeMat.color.copy(globeOff).lerp(globeOn, S.bright); globeMat.userData.base.copy(globeMat.color);
   globeMat.emissive.copy(warm).multiplyScalar(.5 * S.bright);
   glowLight.intensity = 2 * S.bright;
-  bulbMat.emissive.copy(warm).multiplyScalar(using ? 1.4 * S.bright : 0);
   drawFace(mood());
 
-  // battery dots: lit by quarters; while charging the next one blinks; when flat the first blinks red
+  // charge lights on the stand: lit by quarters; while charging the next one blinks; when flat the first blinks red
   const lit = Math.ceil(S.charge * 4 - 1e-6);
   for (let i = 0; i < 4; i++){
     const m = dotMats[i];
@@ -969,31 +952,33 @@ function update(dt, t){
   else if (S.charge >= 1) chargerLedMat.emissive.copy(tealCol).multiplyScalar(1.4);
   else chargerLedMat.emissive.copy(stopCol).multiplyScalar(1.3);
 
-  // the energy balls follow the charge: ball i sits on the minus side while i < charge * N
+  // explode: the battery comes apart upwards, the wrapper slides off to the side
+  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
+  for (const p of partList){
+    if (p.row !== 'battery') continue;
+    const local = easeIO(clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1));
+    p.group.position.copy(p.base).addScaledVector(p.off, local);
+  }
+  for (const s of signs) s.material.opacity = 1 - smooth(0, .3, S.ep);
+
+  // the energy balls follow the charge: ball i sits on the minus side while i < charge * N,
+  // and rides along with its shelves when the battery is taken apart
   const full = S.charge * ballsMax;
+  const yMinus = parts.minusLayers.group.position.y, yPlus = parts.plusLayers.group.position.y;
   for (let i = 0; i < ballsMax; i++){
     const b = balls[i], target = i < full ? 0 : 1;
     b.p += clamp(target - b.p, -dt * 1.1, dt * 1.1);
     const k = easeIO(b.p);
-    // quadratic path through the separator
-    q1.copy(b.a).lerp(b.mid, k); q2.copy(b.mid).lerp(b.c, k); bp.copy(q1).lerp(q2, k);
-    const jig = .0012 * Math.sin(t * 3 + b.wob); bp.y += jig;
-    bs.setScalar(.0062); bm.compose(bp, bq, bs); ballMesh.setMatrixAt(i, bm);
+    b.path.getPoint(k, bp);
+    bp.y += yMinus + (yPlus - yMinus) * k + .001 * Math.sin(t * 3 + b.wob) * (k > 0 && k < 1 ? 0 : 1);
+    bs.setScalar(BALL_R); bm.compose(bp, bq, bs); ballMesh.setMatrixAt(i, bm);
   }
   ballMesh.instanceMatrix.needsUpdate = true;
 
-  // explode: parts lift straight up
-  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
-  for (const p of partList){
-    if (p.row !== 'lantern') continue;
-    const local = clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1);
-    p.group.position.y = p.base.y + easeIO(local) * p.dist;
-  }
-
-  // x-ray shells
+  // x-ray: the wrapper turns see-through
   const xT = (S.xray && S.ep < .02) ? 1 : 0;
   S.xr += (xT - S.xr) * Math.min(1, dt * 6);
-  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .85 * S.xr); m.depthWrite = S.xr < .25 && m !== globeMat; }
+  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .85 * S.xr); m.depthWrite = S.xr < .25; }
 
   // highlights
   const pulseK = .36 + .26 * Math.sin(t * 3.4);
@@ -1006,11 +991,9 @@ function update(dt, t){
 
   // flows
   lanternUse.update(dt, using && !plugIn);
-  giantUse.update(dt, using && !plugIn);
   const chg = plugIn && S.charge < 1 && !hold;
   cableFlow.update(dt, plugIn && !hold && (S.charge < 1 || S.on));
-  lanternCharge.update(dt, chg);
-  giantCharge.update(dt, chg);
+  standCharge.update(dt, chg);
 
   // camera tween
   if (tween){
