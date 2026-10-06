@@ -1,0 +1,1091 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9e0e4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Inside a Battery">
+<meta property="og:description" content="Interactive 3D rechargeable lantern: watch the battery go flat, charge it up again, and see the energy move inside a giant battery cell.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%94%8B%3C/text%3E%3C/svg%3E">
+<title>Inside a Battery</title>
+<meta name="description" content="Interactive 3D rechargeable lantern: watch the battery go flat, charge it up again, and see the energy move inside a giant battery cell.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..600&display=swap">
+<style>
+/* Layout: a full-bleed 3D stage with a rechargeable lantern, its charger and a giant cut-open battery cell. The title sits on the stage top-left like a rating plate,
+   the lantern's controls dock bottom-left, and the walkthrough is the one card (bottom-right; stacked under the stage on phones). */
+:root{
+  --bg:#d9e0e4; --bg-hi:#eff3f4; --ink:#14212a; --muted:#52616b; --line:rgba(20,33,42,.14);
+  --panel:rgba(248,250,250,.88); --panel-solid:#f8fafa; --glass:rgba(20,33,42,.10);
+  --volt:#c4780f; --air:#1f73b2; --lamp:#b6c0c6; --teal:#1a9e8f; --stop:#d23c5a;
+  --primary:#14212a; --on-primary:#f2f5f6; --shadow:.24; --pink:#b2306b; --pink-soft:rgba(178,48,107,.12);
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+    --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+    --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+    --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+  --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+  --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+  --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{
+  margin:0; overflow:hidden; color:var(--ink); font-family:var(--f-body); font-size:15px;
+  background-color:var(--bg);
+  background-image:radial-gradient(120% 85% at 38% 22%, var(--bg-hi), var(--bg) 72%);
+}
+.app{position:relative; height:100%; overflow:hidden}
+#stage{position:absolute; inset:0; width:100%; height:100%; display:block; outline:none; cursor:grab}
+#stage.pick{cursor:pointer}
+#stage:active{cursor:grabbing}
+
+.masthead{position:absolute; top:22px; left:24px; max-width:min(440px, calc(100% - 48px)); pointer-events:none; display:grid; gap:8px}
+.plate{justify-self:start; margin:0; font:500 11px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:5px 8px}
+h1{margin:0; font-family:var(--f-display); font-weight:780; font-stretch:125%; font-size:clamp(1.45rem, 2.5vw, 2.3rem); line-height:1.02; letter-spacing:-.012em; text-wrap:balance}
+.hint{margin:0; color:var(--muted); font-size:.92rem; line-height:1.45; max-width:42ch}
+.readout{display:flex; flex-wrap:wrap; gap:6px 20px; margin:4px 0 0}
+.readout div{display:grid; gap:2px}
+.readout dt{font:500 10px/1 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.readout dd{margin:0; font:500 13.5px/1.2 var(--f-mono); font-variant-numeric:tabular-nums}
+.meter{display:inline-block; width:34px; height:9px; margin-right:7px; vertical-align:0; border:1px solid var(--muted); border-radius:2px; position:relative}
+.meter i{position:absolute; left:1px; top:1px; bottom:1px; width:0; background:var(--teal); border-radius:1px}
+.meter.low i{background:var(--volt)}
+
+.hud{position:absolute; left:20px; right:20px; bottom:20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; pointer-events:none}
+.hud > *{pointer-events:auto}
+.dock{display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0}
+.btn{
+  height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap;
+  font:500 14px/1 var(--f-body); color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.btn:hover{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.lamp{width:8px; height:8px; border-radius:50%; background:var(--lamp); transition:background-color .2s, box-shadow .2s}
+.btn[aria-pressed="true"] .lamp{background:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent)}
+.btn.primary{background:var(--primary); color:var(--on-primary); border-color:var(--primary); font-family:var(--f-display); font-weight:680; font-stretch:115%; letter-spacing:.01em; padding:0 18px}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.plain-btn{background:transparent; border-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; color:var(--muted); padding:0 8px}
+.btn.plain-btn:hover{color:var(--ink)}
+button:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+.guide{
+  width:348px; flex:none; box-sizing:border-box; padding:18px 20px 16px; display:grid; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 32px var(--glass);
+}
+.guide-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+.eyebrow{font:500 10.5px/1 var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.count{font:500 11px/1 var(--f-mono); color:var(--muted); font-variant-numeric:tabular-nums}
+.guide h2{margin:0; font-family:var(--f-display); font-weight:720; font-stretch:112%; font-size:1.22rem; line-height:1.15; text-wrap:balance}
+.guide-body{margin:0; font-size:1.02rem; line-height:1.6; min-width:0}
+.spec{margin:0; padding-top:10px; border-top:1px dashed var(--line); font-size:.92rem; line-height:1.5; color:var(--ink)}
+.try{display:inline-block; margin-right:8px; padding:3px 7px; border-radius:4px; font:500 10px/1.2 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--pink); background:var(--pink-soft); vertical-align:1px}
+.guide-nav{display:flex; align-items:center; gap:10px; margin-top:4px}
+.dots{display:flex; gap:4px; list-style:none; margin:0; padding:0; flex:1; justify-content:center}
+.dots button{width:16px; height:16px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center}
+.dots button::before{content:""; width:14px; height:4px; border-radius:2px; background:var(--line); transition:background-color .2s}
+.dots button.done::before{background:color-mix(in srgb, var(--ink) 35%, transparent)}
+.dots button[aria-current="step"]::before{background:var(--pink)}
+.nav-btn{height:34px; padding:0 12px; font:500 13.5px/1 var(--f-body); cursor:pointer; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:7px; white-space:nowrap}
+.nav-btn:disabled{opacity:.4; cursor:default}
+.nav-btn.next{background:var(--primary); color:var(--on-primary); border-color:var(--primary)}
+
+.tip{
+  position:absolute; left:0; top:0; z-index:5; max-width:280px; pointer-events:none; padding:9px 11px 10px;
+  background:var(--panel-solid); border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px var(--glass);
+  display:grid; gap:3px; font-size:13px; line-height:1.4;
+}
+.tip b{font-family:var(--f-display); font-weight:700; font-stretch:112%; font-size:13.5px; color:var(--ink)}
+.tip span{color:var(--muted)}
+
+.labels{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+.lbl{position:absolute; left:0; top:0; display:flex; align-items:center; will-change:transform; visibility:hidden}
+.lbl.right{flex-direction:row}
+.lbl.left{flex-direction:row-reverse}
+.lbl-pin{width:6px; height:6px; border-radius:50%; background:var(--pink); box-shadow:0 0 0 2px var(--panel-solid); flex:none}
+.lbl-stem{height:1px; width:var(--stem, 24px); background:var(--ink); opacity:.4; flex:none}
+.lbl-name{
+  font:640 11.5px/1.15 var(--f-display); font-stretch:110%; white-space:nowrap; color:var(--ink);
+  padding:4px 7px; border-radius:4px; background:var(--panel-solid); border:1px solid var(--line); box-shadow:0 2px 8px var(--glass);
+}
+.lbl.hot .lbl-name{border-color:var(--pink); box-shadow:0 0 0 2px var(--pink-soft)}
+
+.fail{position:absolute; inset:0; display:grid; place-items:center; padding-inline:24px}
+.fail div{max-width:420px; background:var(--panel-solid); border:1px solid var(--line); border-radius:12px; padding:20px 22px}
+.fail h2{margin:0 0 6px; font-family:var(--f-display); font-stretch:112%}
+.fail p{margin:0; color:var(--muted); line-height:1.5}
+
+@media (max-width: 760px){
+  .masthead{top:14px; left:16px; right:16px; max-width:none; gap:6px}
+  h1{font-size:1.3rem}
+  .hint{display:none}
+  .readout dd{font-size:12.5px}
+  .hud{left:12px; right:12px; bottom:12px; flex-direction:column; align-items:stretch; gap:8px}
+  .dock{gap:6px}
+  .btn{height:36px; padding:0 11px; font-size:13px}
+  .btn.primary{padding:0 14px}
+  .guide{width:auto; padding:14px 16px 12px; gap:8px}
+  .guide h2{font-size:1.08rem}
+  .guide-body{font-size:.95rem; max-height:22vh; overflow-y:auto}
+}
+@media (prefers-reduced-motion: reduce){ .lamp,.dots button::before{transition:none} }
+</style>
+<style>
+/* Collapsible walkthrough card: tap or swipe the header to fold it away */
+button.guide-head{
+  appearance:none; -webkit-appearance:none; position:relative; width:100%; margin:0; padding:0; border:0; background:none;
+  color:inherit; font:inherit; text-align:left; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+  display:flex; align-items:center; gap:10px;
+}
+button.guide-head .count{margin-left:auto}
+.fold{display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid var(--line); border-radius:6px;
+  font:500 10.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--panel-solid)}
+.fold svg{width:10px; height:10px; transition:transform .2s ease}
+button.guide-head:hover .fold{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.guide.collapsed .fold svg{transform:rotate(180deg)}
+.grip{display:none}
+.guide-content{display:grid; gap:inherit; min-width:0}
+.guide.collapsed .guide-content{display:none}
+.guide.collapsed{width:auto; padding-top:12px; padding-bottom:12px}
+@media (max-width: 760px){
+  .grip{display:block; position:absolute; top:-8px; left:50%; width:38px; height:4px; margin-left:-19px; border-radius:2px; background:color-mix(in srgb, var(--ink) 25%, transparent)}
+  button.guide-head{padding-top:6px}
+  .guide{padding-top:16px}
+  .guide.collapsed{padding-top:16px; padding-bottom:12px}
+}
+@media (prefers-reduced-motion: reduce){ .fold svg{transition:none} }
+
+/* Back-to-menu link */
+.back{pointer-events:auto; justify-self:start; display:inline-flex; align-items:center; gap:6px; margin:-6px 0 0 -8px; padding:6px 8px; border-radius:6px;
+  font:500 11.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.back:hover{background:var(--glass)}
+.back:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+/* Mobile additions for the standalone site */
+html,body{height:100%; height:100dvh}
+body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
+.app{height:100dvh}
+#stage{touch-action:none}
+.masthead{top:calc(22px + env(safe-area-inset-top)); left:calc(24px + env(safe-area-inset-left))}
+.hud{bottom:calc(20px + env(safe-area-inset-bottom)); left:calc(20px + env(safe-area-inset-left)); right:calc(20px + env(safe-area-inset-right))}
+@media (max-width: 760px){
+  .masthead{top:calc(12px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); right:calc(14px + env(safe-area-inset-right))}
+  .hud{left:calc(10px + env(safe-area-inset-left)); right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom))}
+  .dock{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+  .dock .btn{justify-content:center; padding:0 6px; min-width:0; height:40px}
+  #btn-explode{grid-column:1 / 3}
+  #btn-reset{background:var(--panel); border-color:var(--line)}
+  .nav-btn{height:40px; padding:0 14px}
+  .dots button{width:14px; height:28px}
+  .tip{max-width:min(280px, calc(100vw - 24px))}
+}
+@media (max-width: 380px){
+  .readout{gap:4px 14px}
+  .plate{font-size:10px}
+  .btn{font-size:12.5px; gap:6px}
+  .guide{padding:12px 14px 10px; gap:6px}
+  .guide h2{font-size:1rem}
+  .guide-body{max-height:18vh}
+  .spec{font-size:.84rem; padding-top:8px}
+  .dots{gap:2px}
+  .dots button{width:10px}
+  .dots button::before{width:8px}
+  .nav-btn{padding:0 11px}
+}
+@media (max-height: 500px) and (orientation: landscape){
+  .readout,.plate{display:none}
+  .guide-body{max-height:30vh}
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <canvas id="stage" aria-label="Interactive 3D model of a pink rechargeable lantern with its charger, next to a giant cut-open battery cell. Drag to orbit, scroll to zoom."></canvas>
+  <div class="labels" id="labels" aria-hidden="true"></div>
+
+  <header class="masthead" id="mast">
+    <a class="back" href="../">&larr; All machines</a>
+    <p class="plate">Model LT-26 · 3.7 V · 2 × 2,600 mAh</p>
+    <h1>Inside a Battery</h1>
+    <p class="hint" id="hint">Drag to orbit, scroll to zoom, hover any part to see what it does.</p>
+    <dl class="readout" aria-live="off">
+      <div><dt>Battery</dt><dd><span class="meter" id="ro-meter"><i></i></span><span id="ro-bat">80%</span></dd></div>
+      <div><dt>Light</dt><dd id="ro-light">On</dd></div>
+      <div><dt>Lantern</dt><dd id="ro-state">Glowing</dd></div>
+    </dl>
+  </header>
+
+  <div class="hud" id="hud">
+    <nav class="dock" id="dock" aria-label="Lantern controls">
+      <button class="btn" id="btn-light" aria-pressed="true"><span class="lamp"></span>Light</button>
+      <button class="btn" id="btn-plug" aria-pressed="false"><span class="lamp"></span>Charger</button>
+      <button class="btn" id="btn-xray" aria-pressed="false"><span class="lamp"></span>See inside</button>
+      <button class="btn primary" id="btn-explode" aria-pressed="false">Explode</button>
+      <button class="btn plain-btn" id="btn-reset">Reset view</button>
+    </nav>
+
+    <aside class="guide" id="guide" aria-labelledby="g-title">
+      <button type="button" class="guide-head" id="g-toggle" aria-expanded="true" aria-controls="g-content" title="Tap or swipe down to hide"><span class="grip" aria-hidden="true"></span><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span><span class="fold"><span id="g-fold-txt">Hide</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+      <div class="guide-content" id="g-content">
+      <h2 id="g-title">Hello, lantern!</h2>
+      <p class="guide-body" id="g-body" aria-live="polite"></p>
+      <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
+      <div class="guide-nav">
+        <button class="nav-btn" id="g-prev" disabled>Back</button>
+        <ol class="dots" id="g-dots"></ol>
+        <button class="nav-btn next" id="g-next">Start</button>
+      </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="tip" id="tip" hidden><b id="tip-name"></b><span id="tip-desc"></span></div>
+
+  <div class="fail" id="fail" hidden>
+    <div><h2>The 3D view didn't load</h2><p>This page needs WebGL and the Three.js library. Check your connection, then reload the page.</p></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+function fail(){ $('#fail').hidden = false; $('#hud').hidden = true; }
+if (!window.THREE || !THREE.OrbitControls || !THREE.RoomEnvironment) { fail(); return; }
+
+/* ---------------------------------------------------------------- helpers */
+const TAU = Math.PI * 2, V3 = THREE.Vector3, DS = THREE.DoubleSide;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+const rand = (a, b) => a + Math.random() * (b - a);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+
+function mergeGeos(list){
+  let nv = 0, ni = 0;
+  for (const g of list){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+  let vo = 0, io = 0;
+  for (const g of list){
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3);
+    if (g.index){ const a = g.index.array; for (let i = 0; i < a.length; i++) idx[io++] = a[i] + vo; }
+    else for (let i = 0; i < n; i++) idx[io++] = vo + i;
+    vo += n; g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  return out;
+}
+const v2 = pts => pts.map(([r, y]) => new THREE.Vector2(r, y));
+function latheY(profile, segs = 64, p0 = 0, pl = TAU){ return new THREE.LatheGeometry(v2(profile), segs, p0, pl); }
+function cylY(r, y0, y1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; }
+function cylX(r, x0, x1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg); g.rotateZ(Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+function rrShape(w, h, r){
+  r = Math.max(.0004, Math.min(r, w / 2, h / 2));
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function roundedBox(w, h, d, b){
+  const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, b * .8), { depth: Math.max(.0002, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 6 });
+  g.translate(0, 0, -(d - 2 * b) / 2); return g;
+}
+// extrude a top-view shape (shape x = world x, shape y = -world z) upward from y0 by depth
+function slab(shape, y0, depth, bevel = 0){
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(.0002, depth - 2 * bevel), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 48 });
+  g.rotateX(-Math.PI / 2); g.translate(0, y0 + bevel, 0); return g;
+}
+function tube(points, radius, segs = 24, radial = 6){ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), segs, radius, radial, false); }
+function canvasTex(w, h, draw){ const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.userData = { canvas: c, ctx: x }; return t; }
+
+/* ---------------------------------------------------------------- renderer, scene, camera */
+const canvas = $('#stage');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+catch (e) { fail(); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 40);
+camera.position.set(.3, .5, 1.1);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+controls.minDistance = .18; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI / 2 - .02;
+controls.screenSpacePanning = true;
+
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a979e, .38));
+const key = new THREE.DirectionalLight(0xffffff, 1.7);
+key.position.set(-1.3, 3.1, 1.7);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: .5, far: 8 });
+key.shadow.bias = -.0004; key.shadow.normalBias = .01;
+key.target.position.set(0, 0, -.2);
+scene.add(key, key.target);
+const rimLight = new THREE.DirectionalLight(0xd9e6ff, .5);
+rimLight.position.set(2, 1.4, -2.2);
+scene.add(rimLight);
+
+const floorMat = new THREE.ShadowMaterial({ opacity: .24 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+scene.add(floor);
+
+/* ---------------------------------------------------------------- materials */
+const MAT = {
+  pink: () => new THREE.MeshPhysicalMaterial({ color: 0xe8579b, roughness: .38, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  pinkLight: () => new THREE.MeshPhysicalMaterial({ color: 0xef78b0, roughness: .36, clearcoat: .45, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  trim: () => new THREE.MeshPhysicalMaterial({ color: 0x9a1a54, roughness: .42, clearcoat: .25, side: DS }),
+  white: () => new THREE.MeshPhysicalMaterial({ color: 0xf3eff1, roughness: .4, clearcoat: .3, envMapIntensity: .8, side: DS }),
+  grey: () => new THREE.MeshStandardMaterial({ color: 0x5a5f66, roughness: .6, side: DS }),
+  dark: () => new THREE.MeshStandardMaterial({ color: 0x2b2f34, roughness: .55, side: DS }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: 0x15171b, roughness: .08, clearcoat: 1, clearcoatRoughness: .05, side: DS }),
+  satin: () => new THREE.MeshStandardMaterial({ color: 0xc4c9cd, metalness: .9, roughness: .3, side: DS }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: 0x26292c, roughness: .82, side: DS }),
+  pcb: () => new THREE.MeshStandardMaterial({ color: 0x2c7a4b, roughness: .55, side: DS }),
+  cell: () => new THREE.MeshPhysicalMaterial({ color: 0x3b6fd8, roughness: .35, clearcoat: .5, side: DS }),
+  bristle: () => new THREE.MeshStandardMaterial({ color: 0xf6a9cb, roughness: .7, side: DS }),
+  fabric: () => new THREE.MeshStandardMaterial({ color: 0xf8e3ee, roughness: 1, side: DS }),
+};
+
+/* ---------------------------------------------------------------- parts registry */
+const parts = {}, partList = [], shellMats = [];
+function makePart(id, name, desc, parent, row){
+  const g = new THREE.Group(); g.name = id; parent.add(g);
+  const p = { id, name, desc, row, group: g, meshes: [], mats: [], hl: 0, dist: 0, rank: 0, base: new V3(), anchor: new V3(), side: 'right', stem: 24, labelEl: null };
+  parts[id] = p; partList.push(p); return p;
+}
+function addMesh(p, geo, mat, o = {}){
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = o.shadow !== false; m.receiveShadow = o.receive !== false;
+  m.userData.part = p; m.userData.shell = !!o.shell;
+  (o.parent || p.group).add(m);
+  p.meshes.push(m);
+  if (!p.mats.includes(mat)){
+    p.mats.push(mat);
+    mat.userData.base = mat.color.clone();
+    mat.userData.op = mat.opacity;
+    if (o.shell){ mat.transparent = true; shellMats.push(mat); }
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------- scene tweaks: a small lantern on the floor near a wall */
+camera.near = .004; camera.far = 30; camera.updateProjectionMatrix();
+controls.minDistance = .08; controls.maxDistance = 3;
+controls.minAzimuthAngle = -1.35; controls.maxAzimuthAngle = 1.35;
+key.position.set(-1.2, 2.2, 1.8); key.target.position.set(.05, .05, -.05);
+Object.assign(key.shadow.camera, { left: -.8, right: .8, top: .8, bottom: -.8, near: .5, far: 7 });
+key.shadow.camera.updateProjectionMatrix();
+key.shadow.bias = -.0002; key.shadow.normalBias = .003;
+const hemi = scene.children.find(o => o.isHemisphereLight);
+
+const WALL_Z = -.3;
+floor.geometry.dispose(); floor.geometry = new THREE.PlaneGeometry(6, 3).translate(0, -1.5 - WALL_Z, 0);
+const wallMat = new THREE.ShadowMaterial({ opacity: .15 });
+{
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(4, 2), wallMat);
+  wall.position.set(0, 1, WALL_Z); wall.receiveShadow = true; scene.add(wall);
+  const skirt = new THREE.Mesh(roundedBox(4, .07, .012, .002).translate(0, .035, WALL_Z + .006), MAT.white());
+  skirt.receiveShadow = true; skirt.castShadow = true; scene.add(skirt);
+}
+
+/* ---------------------------------------------------------------- helpers */
+function cylZ(r, z0, z1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), seg); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; }
+// a cylinder lying along x with an optional wedge cut away (theta measured from +z, see three's CylinderGeometry)
+function cylXCut(r, x0, x1, ts = 0, tl = TAU, open = false, seg = 48){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg, 1, open, ts, tl); g.rotateZ(-Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+function textSprite(text, h, opts = {}){
+  const fs = 64, pad = 18;
+  const c = document.createElement('canvas'), x = c.getContext('2d');
+  x.font = `${opts.weight || 800} ${fs}px "Archivo", Arial, sans-serif`;
+  c.width = Math.ceil(x.measureText(text).width + pad * 2); c.height = fs + pad * 2;
+  x.font = `${opts.weight || 800} ${fs}px "Archivo", Arial, sans-serif`; x.textBaseline = 'middle'; x.textAlign = 'center';
+  if (opts.bg){ x.fillStyle = opts.bg; x.beginPath(); x.roundRect ? x.roundRect(0, 0, c.width, c.height, 22) : x.rect(0, 0, c.width, c.height); x.fill(); }
+  x.fillStyle = opts.color || '#14212a'; x.fillText(text, c.width / 2, c.height / 2 + 3);
+  const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthWrite: false }));
+  s.scale.set(h * c.width / c.height, h, 1); s.raycast = () => {};
+  return s;
+}
+
+/* ================================================================ LANTERN */
+const lantern = new THREE.Group(); scene.add(lantern);
+const MANAGED = new Set();   // materials whose glow is driven by the battery, not by highlights
+// Base housing
+{
+  const p = makePart('baseShell', 'Lantern base', 'The bottom of the lantern. The battery lives safely inside it.', lantern, 'lantern');
+  const m = MAT.pink();
+  addMesh(p, roundedBox(.13, .055, .13, .012).translate(0, .0315, 0), m, { shell: true });
+  const feet = []; for (const sx of [-.048, .048]) for (const sz of [-.048, .048]) feet.push(cylY(.008, 0, .005, 16).translate(sx, 0, sz));
+  addMesh(p, mergeGeos(feet), MAT.rubber());
+  addMesh(p, roundedBox(.003, .0065, .012, .001).translate(-.0645, .0306, 0), MAT.dark());
+}
+// Battery holder
+{
+  const p = makePart('holder', 'Battery holder', 'A little cradle that holds the battery cells still, with springs at the ends.', lantern, 'lantern');
+  addMesh(p, roundedBox(.084, .008, .07, .002).translate(0, .011, 0), MAT.dark());
+  const springs = [];
+  for (const sz of [-.019, .019]) for (const sx of [-.04, .04]){ const pts = []; for (let i = 0; i <= 40; i++){ const a = i / 40 * 5 * TAU; pts.push(new V3(sx - Math.sign(sx) * i / 40 * .004, .022 + Math.sin(a) * .005, sz + Math.cos(a) * .005)); } springs.push(tube(pts, .0006, 80, 4)); }
+  addMesh(p, mergeGeos(springs), MAT.satin());
+}
+// Battery cells
+{
+  const p = makePart('cells', 'Battery cells', 'Two battery cells. They store the electricity, ready for when you switch the light on.', lantern, 'lantern');
+  const wrap = canvasTex(256, 64, (x, w, h) => { x.fillStyle = '#3b6fd8'; x.fillRect(0, 0, w, h); x.fillStyle = 'rgba(255,255,255,.9)'; x.font = '700 26px "Archivo", Arial, sans-serif'; x.textBaseline = 'middle'; x.fillText('3.7 V  ⚡  2600 mAh', 22, h / 2 + 2); x.fillStyle = '#e8579b'; x.fillRect(0, 0, 12, h); });
+  const cellMat = new THREE.MeshPhysicalMaterial({ map: wrap, roughness: .35, clearcoat: .5 });
+  for (const sz of [-.019, .019]){
+    const g = new THREE.CylinderGeometry(.0092, .0092, .065, 32, 1, true); g.rotateY(Math.PI / 2); g.rotateZ(-Math.PI / 2); g.translate(0, .022, sz);
+    addMesh(p, g, cellMat);
+    addMesh(p, mergeGeos([cylX(.0088, -.0335, -.0325, 24).translate(0, .022, sz), cylX(.0088, .0325, .0335, 24).translate(0, .022, sz), cylX(.0035, .0335, .0365, 16).translate(0, .022, sz)]), MAT.satin());
+  }
+}
+// Circuit board with the charging socket
+{
+  const p = makePart('board', 'Circuit board', 'The lantern’s brain. It sends electricity to the lights, and when you charge, it fills the battery carefully so it never gets too full.', lantern, 'lantern');
+  addMesh(p, new THREE.BoxGeometry(.1, .0018, .07).translate(0, .041, -.008), MAT.pcb());
+  const chips = [new THREE.BoxGeometry(.014, .003, .014).translate(.018, .0434, .0), new THREE.BoxGeometry(.008, .0025, .006).translate(-.02, .0432, .01), new THREE.BoxGeometry(.008, .0025, .006).translate(-.03, .0432, -.01)];
+  addMesh(p, mergeGeos(chips), MAT.dark());
+  addMesh(p, roundedBox(.012, .005, .009, .0015).translate(-.058, .0306, 0), MAT.satin());
+  addMesh(p, mergeGeos([
+    tube([new V3(.0365, .022, -.019), new V3(.04, .032, -.02), new V3(.035, .04, -.018)], .0009, 10, 5)
+  ]), new THREE.MeshStandardMaterial({ color: 0xc23b3b, roughness: .5 }));
+  addMesh(p, mergeGeos([
+    tube([new V3(-.0335, .022, .019), new V3(-.038, .032, .02), new V3(-.034, .04, .018)], .0009, 10, 5)
+  ]), MAT.dark());
+}
+// Button and battery lights on the front of the base
+const dotMats = [];
+{
+  const p = makePart('controls', 'Button and battery lights', 'Press the button to switch the light on. The four little lights show how full the battery is.', lantern, 'lantern');
+  const icon = canvasTex(128, 128, x => { x.strokeStyle = '#ffffff'; x.lineWidth = 12; x.lineCap = 'round'; x.beginPath(); x.arc(64, 68, 34, -Math.PI / 2 + .6, -Math.PI / 2 - .6 + TAU); x.stroke(); x.beginPath(); x.moveTo(64, 24); x.lineTo(64, 62); x.stroke(); });
+  addMesh(p, cylZ(.0095, .062, .068, 32).translate(0, .038, 0), MAT.trim());
+  const lab = new THREE.Mesh(new THREE.CircleGeometry(.0065, 24).translate(0, .038, .0682), new THREE.MeshBasicMaterial({ map: icon, transparent: true, depthWrite: false }));
+  lab.raycast = () => {}; p.group.add(lab);
+  for (let i = 0; i < 4; i++){
+    const m = new THREE.MeshStandardMaterial({ color: 0x3a4148, emissive: 0x000000, roughness: .3 }); dotMats.push(m); MANAGED.add(m);
+    addMesh(p, cylZ(.0026, .064, .0665, 16).translate(-.0165 + i * .011, .017, 0), m);
+  }
+}
+// Top deck of the base
+{
+  const p = makePart('deck', 'Top plate', 'A white plate that closes the base and holds the lights up.', lantern, 'lantern');
+  addMesh(p, roundedBox(.122, .005, .122, .002).translate(0, .0605, 0), MAT.white(), { shell: true });
+}
+// LED lights
+let ledMat, glowLight;
+{
+  const p = makePart('leds', 'LED lights', 'Tiny lights that glow when electricity flows through them. They use very little electricity, so the battery lasts longer.', lantern, 'lantern');
+  addMesh(p, roundedBox(.022, .1, .022, .003).translate(0, .113, 0), MAT.white());
+  ledMat = new THREE.MeshStandardMaterial({ color: 0xfff1c9, emissive: 0x000000, roughness: .3 }); MANAGED.add(ledMat);
+  const leds = [];
+  for (let k = 0; k < 4; k++) for (let j = 0; j < 5; j++){ const b = new THREE.BoxGeometry(.008, .008, .002); b.translate(0, .075 + j * .018, .0115); b.rotateY(k * Math.PI / 2); leds.push(b); }
+  addMesh(p, mergeGeos(leds), ledMat);
+  glowLight = new THREE.PointLight(0xffc06a, 0, .9, 2); glowLight.position.set(0, .13, 0); p.group.add(glowLight);
+}
+// Frosted globe with a face
+let globeMat;
+const faceTex = canvasTex(512, 400, () => {});
+let faceMood = '';
+function drawFace(mood){
+  if (mood === faceMood) return; faceMood = mood;
+  const x = faceTex.userData.ctx, w = 512, h = 400, ink = '#5a3446';
+  x.clearRect(0, 0, w, h); x.lineCap = 'round'; x.lineJoin = 'round'; x.strokeStyle = ink; x.fillStyle = ink; x.lineWidth = 14;
+  const ex = [170, 342], ey = 170;
+  x.fillStyle = 'rgba(247,120,150,.45)'; for (const cx of [104, 408]){ x.beginPath(); x.ellipse(cx, 238, 40, 24, 0, 0, TAU); x.fill(); }
+  x.fillStyle = ink;
+  const roundEyes = (big) => { for (const cx of ex){ x.beginPath(); x.ellipse(cx, ey, big ? 34 : 28, big ? 42 : 36, 0, 0, TAU); x.fill(); x.fillStyle = '#fff'; x.beginPath(); x.arc(cx - 11, ey - 15, 11, 0, TAU); x.fill(); x.beginPath(); x.arc(cx + 10, ey + 12, 5, 0, TAU); x.fill(); x.fillStyle = ink; } };
+  if (mood === 'happy'){ roundEyes(false); x.beginPath(); x.arc(256, 230, 56, .15 * Math.PI, .85 * Math.PI); x.stroke(); }
+  else if (mood === 'full'){
+    const star = (cx, cy, r) => { x.beginPath(); for (let i = 0; i < 10; i++){ const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * .45 : r; x.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); } x.closePath(); x.fill(); };
+    for (const cx of ex) star(cx, ey, 46);
+    x.beginPath(); x.moveTo(190, 236); x.quadraticCurveTo(256, 330, 322, 236); x.closePath(); x.fill();
+  } else if (mood === 'rest'){
+    for (const cx of ex){ x.beginPath(); x.arc(cx, ey + 12, 30, 1.15 * Math.PI, 1.85 * Math.PI); x.stroke(); }
+    x.beginPath(); x.arc(256, 230, 40, .2 * Math.PI, .8 * Math.PI); x.stroke();
+  } else if (mood === 'tired'){
+    for (const cx of ex){ x.beginPath(); x.ellipse(cx, ey + 8, 28, 24, 0, 0, Math.PI); x.fill(); x.beginPath(); x.moveTo(cx - 34, ey + 6); x.lineTo(cx + 34, ey + 6); x.stroke(); }
+    x.beginPath(); x.moveTo(216, 262); x.quadraticCurveTo(256, 246, 296, 262); x.stroke();
+  } else if (mood === 'flat'){
+    for (const cx of ex){ x.beginPath(); x.arc(cx, ey - 4, 30, .2 * Math.PI, .8 * Math.PI); x.stroke(); }
+    x.beginPath(); x.arc(256, 290, 40, 1.2 * Math.PI, 1.8 * Math.PI); x.stroke();
+    x.font = '800 60px "Archivo", Arial, sans-serif'; x.fillText('z', 420, 100); x.font = '800 42px "Archivo", Arial, sans-serif'; x.fillText('z', 462, 58);
+  } else if (mood === 'charging'){
+    roundEyes(true); x.beginPath(); x.ellipse(256, 262, 26, 30, 0, 0, TAU); x.fill();
+    x.fillStyle = '#f0a43c'; x.beginPath(); x.moveTo(440, 40); x.lineTo(404, 112); x.lineTo(430, 112); x.lineTo(414, 170); x.lineTo(470, 86); x.lineTo(442, 86); x.lineTo(460, 40); x.closePath(); x.fill();
+  }
+  faceTex.needsUpdate = true;
+}
+{
+  const p = makePart('globe', 'Frosted cover', 'The see-through cover spreads the light out softly, so it isn’t too bright for your eyes.', lantern, 'lantern');
+  globeMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: .5, transparent: true, opacity: .62, clearcoat: .4, emissive: 0x000000, side: DS }); MANAGED.add(globeMat);
+  addMesh(p, roundedBox(.118, .14, .118, .012).translate(0, .133, 0), globeMat, { shell: true, shadow: false });
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(.1, .078).translate(0, .14, .0595), new THREE.MeshStandardMaterial({ map: faceTex, transparent: true, depthWrite: false, roughness: .5 }));
+  face.raycast = () => {}; p.group.add(face);
+  const fm = face.material; fm.userData.base = fm.color.clone(); fm.userData.op = 1; shellMats.push(fm);
+}
+drawFace('happy');
+// Top cap and handle
+{
+  const p = makePart('cap', 'Top cap', 'The lid on top. It keeps dust and rain out.', lantern, 'lantern');
+  addMesh(p, roundedBox(.13, .024, .13, .01).translate(0, .215, 0), MAT.pink());
+}
+{
+  const p = makePart('handle', 'Handle', 'For carrying the lantern, or hanging it up in a tent.', lantern, 'lantern');
+  const h = new THREE.TorusGeometry(.042, .0055, 12, 40, Math.PI); h.translate(0, .227, 0);
+  addMesh(p, h, MAT.pinkLight());
+  addMesh(p, mergeGeos([cylY(.008, .226, .232, 16).translate(-.042, 0, 0), cylY(.008, .226, .232, 16).translate(.042, 0, 0)]), MAT.trim());
+}
+
+/* ================================================================ CHARGER AND CABLE */
+const SOCK = { x: -.24, y: .26 };
+let chargerLedMat;
+{
+  const p = makePart('charger', 'Charger', 'Plugs into the wall and sends electricity down the cable into the lantern’s battery. Its light is red while charging and green when the battery is full.', scene, 'prop');
+  addMesh(p, roundedBox(.1, .1, .009, .003).translate(SOCK.x + .022, SOCK.y, WALL_Z + .0045), MAT.white());
+  addMesh(p, roundedBox(.02, .032, .007, .0022).translate(SOCK.x + .05, SOCK.y, WALL_Z + .0125), MAT.white());
+  addMesh(p, roundedBox(.044, .058, .034, .008).translate(SOCK.x, SOCK.y - .004, WALL_Z + .026), MAT.white());
+  chargerLedMat = new THREE.MeshStandardMaterial({ color: 0x3a4148, emissive: 0x000000, roughness: .3 }); MANAGED.add(chargerLedMat);
+  addMesh(p, cylZ(.0022, WALL_Z + .042, WALL_Z + .0436, 16).translate(SOCK.x + .012, SOCK.y + .016, 0), chargerLedMat);
+  addMesh(p, roundedBox(.012, .006, .006, .0015).translate(SOCK.x, SOCK.y - .034, WALL_Z + .026), MAT.dark());
+}
+const PORT = new V3(-.065, .0306, 0);   // charging socket on the left side of the lantern
+const CABLE_FIXED = [new V3(SOCK.x, SOCK.y - .036, WALL_Z + .026), new V3(SOCK.x + .002, SOCK.y - .1, WALL_Z + .034), new V3(SOCK.x + .02, .05, WALL_Z + .05), new V3(SOCK.x + .05, .004, WALL_Z + .09), new V3(-.17, .004, -.09)];
+const CABLE_IN = [new V3(-.13, .006, -.025), new V3(-.096, .02, -.004), new V3(-.082, PORT.y, 0)];
+const CABLE_OUT = [new V3(-.16, .004, -.05), new V3(-.15, .004, -.03), new V3(-.138, .005, -.016)];
+let cableMesh, cableCurve, cablePlug, cableK = -1;
+{
+  const p = makePart('cable', 'Charging cable', 'A wire that carries electricity from the charger to the lantern.', scene, 'prop');
+  cableMesh = addMesh(p, new THREE.BufferGeometry(), MAT.white());
+  cablePlug = new THREE.Group(); p.group.add(cablePlug);
+  addMesh(p, roundedBox(.012, .007, .022, .003).translate(0, 0, -.011), MAT.white(), { parent: cablePlug });
+  addMesh(p, roundedBox(.0085, .0028, .008, .0012).translate(0, 0, .004), MAT.satin(), { parent: cablePlug });
+}
+const tmpPts = [];
+function setCable(k){
+  if (Math.abs(k - cableK) < 1e-4) return; cableK = k;
+  const e = easeIO(k), ends = CABLE_IN.map((a, i) => a.clone().lerp(CABLE_OUT[i], 1 - e));
+  cableCurve = new THREE.CatmullRomCurve3(CABLE_FIXED.concat(ends));
+  cableMesh.geometry.dispose(); cableMesh.geometry = new THREE.TubeGeometry(cableCurve, 90, .0024, 8, false);
+  const end = cableCurve.getPoint(1), tan = cableCurve.getTangent(1);
+  cablePlug.position.copy(end).addScaledVector(tan, .011); cablePlug.lookAt(cablePlug.position.clone().add(tan));
+}
+
+/* ================================================================ GIANT CELL (a cut-away model of one cell) */
+const G = new V3(.36, .1, .02);
+const giant = new THREE.Group(); giant.position.copy(G); scene.add(giant);
+const CELL_R = .068, CELL_L = .3, WEDGE = { ts: .3, tl: TAU - 2.35 };
+const ANODE_X = [-.13, -.1, -.07, -.04, -.012], CATH_X = [.012, .04, .07, .1, .13];
+const ballsMax = 48;
+let bulbMat;
+{
+  const p = makePart('giantCell', 'Inside one battery cell (made giant)', 'A huge model of one battery cell, cut open. The gold balls are tiny bits of energy (lithium) that move from side to side.', giant, 'prop');
+  addMesh(p, cylXCut(CELL_R, -CELL_L / 2, CELL_L / 2, WEDGE.ts, WEDGE.tl, true, 64), new THREE.MeshPhysicalMaterial({ color: 0x3b6fd8, roughness: .35, clearcoat: .5, side: DS }));
+  addMesh(p, cylXCut(CELL_R - .002, -CELL_L / 2 + .002, CELL_L / 2 - .002, WEDGE.ts, WEDGE.tl, true, 64), MAT.satin());
+  addMesh(p, mergeGeos([cylXCut(CELL_R, -CELL_L / 2 - .004, -CELL_L / 2, WEDGE.ts, WEDGE.tl), cylXCut(CELL_R, CELL_L / 2, CELL_L / 2 + .004, WEDGE.ts, WEDGE.tl), cylX(.022, CELL_L / 2 + .004, CELL_L / 2 + .016, 32)]), MAT.satin());
+  // minus side: grey graphite layers; plus side: purple layers; separator in the middle
+  addMesh(p, mergeGeos(ANODE_X.map(x => cylXCut(CELL_R - .006, x - .0025, x + .0025, WEDGE.ts, WEDGE.tl))), new THREE.MeshStandardMaterial({ color: 0x4a4f57, roughness: .8, side: DS }));
+  addMesh(p, mergeGeos(CATH_X.map(x => cylXCut(CELL_R - .006, x - .0025, x + .0025, WEDGE.ts, WEDGE.tl))), new THREE.MeshStandardMaterial({ color: 0x8b5cc7, roughness: .6, side: DS }));
+  const sepTex = canvasTex(128, 128, (x, w) => { x.fillStyle = '#ffffff'; x.fillRect(0, 0, w, w); x.fillStyle = '#c9d6dd'; for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++){ x.beginPath(); x.arc(4 + i * 8, 4 + j * 8, 2.2, 0, TAU); x.fill(); } });
+  addMesh(p, cylXCut(CELL_R - .004, -.0012, .0012, WEDGE.ts, WEDGE.tl), new THREE.MeshStandardMaterial({ map: sepTex, roughness: .9, transparent: true, opacity: .85, side: DS }));
+  // stand
+  addMesh(p, mergeGeos([roundedBox(.03, .036, .1, .006).translate(-.09, -CELL_R - .018 + .006, 0), roundedBox(.03, .036, .1, .006).translate(.09, -CELL_R - .018 + .006, 0), roundedBox(.26, .01, .11, .004).translate(0, -G.y + .005, 0)]), MAT.white());
+  // outside wire with a little bulb: minus end -> bulb -> plus end
+  addMesh(p, tube([new V3(-CELL_L / 2 - .004, 0, 0), new V3(-CELL_L / 2 - .03, .03, 0), new V3(-.1, CELL_R + .05, 0), new V3(0, CELL_R + .06, 0), new V3(.1, CELL_R + .05, 0), new V3(CELL_L / 2 + .04, .03, 0), new V3(CELL_L / 2 + .016, 0, 0)], .0022, 80, 6), MAT.dark());
+  bulbMat = new THREE.MeshPhysicalMaterial({ color: 0xfff4d6, roughness: .1, transparent: true, opacity: .85, emissive: 0x000000 }); MANAGED.add(bulbMat);
+  addMesh(p, new THREE.SphereGeometry(.014, 24, 16).translate(0, CELL_R + .072, 0), bulbMat);
+  addMesh(p, cylY(.008, CELL_R + .052, CELL_R + .062, 16), MAT.satin());
+}
+// signs
+{
+  const minus = textSprite('−  minus side', .022, { bg: 'rgba(255,255,255,.85)' }); minus.position.set(-.08, -CELL_R - .03, .07); giant.add(minus);
+  const plus = textSprite('+  plus side', .022, { bg: 'rgba(255,255,255,.85)' }); plus.position.set(.08, -CELL_R - .03, .07); giant.add(plus);
+}
+// the energy balls
+const ballMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshStandardMaterial({ color: 0xc27a00, emissive: 0x3d2400, roughness: .3, metalness: .25 }), ballsMax);
+ballMesh.castShadow = false; ballMesh.raycast = () => {}; giant.add(ballMesh);
+const balls = [];
+{
+  const slot = (xs, i) => {
+    const g = i % 4, x = (xs[g] + xs[g + 1]) / 2;
+    // keep balls inside the cut-away so they can be seen
+    const a = rand(-.9, 1.5), r = rand(.012, CELL_R - .014);
+    return new V3(x, r * Math.sin(a) * .9, r * Math.cos(a) * .9);
+  };
+  for (let i = 0; i < ballsMax; i++) balls.push({ a: slot(ANODE_X, i), c: slot(CATH_X, i), p: 0, mid: new V3(0, rand(-.03, .04), rand(-.02, .04)), wob: rand(0, TAU) });
+}
+
+/* ---------------------------------------------------------------- explode layout: parts lift straight up */
+scene.updateMatrixWorld(true);
+const STACK = ['baseShell', 'holder', 'cells', 'board', 'controls', 'deck', 'leds', 'globe', 'cap', 'handle'];
+let stackTop = 0;
+{
+  const boxes = STACK.map(id => new THREE.Box3().setFromObject(parts[id].group));
+  let hi = boxes[0].max.y;
+  STACK.forEach((id, i) => {
+    const p = parts[id], b = boxes[i];
+    if (i > 0){ const lo = hi + .03; p.dist = lo - b.min.y; hi = lo + (b.max.y - b.min.y); }
+    p.rank = i / (STACK.length - 1);
+    p.side = i % 2 ? 'left' : 'right'; p.stem = [24, 56][Math.floor(i / 2) % 2];
+    const c = b.getCenter(new V3());
+    p.anchor.copy(p.group.worldToLocal(new V3(p.side === 'right' ? b.max.x : b.min.x, c.y, c.z)));
+  });
+  stackTop = hi;
+}
+for (const p of partList) p.base.copy(p.group.position);
+
+/* ---------------------------------------------------------------- point flows */
+const pointVS = `attribute float aAlpha; attribute float aSize; varying float vA; uniform float uScale;
+  void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = max(1.0, aSize * uScale / -mv.z); }`;
+const pointFS = `uniform vec3 uColor; uniform float uCore; varying float vA;
+  void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = (1.0 - smoothstep(0.3, 1.0, d)) * vA; if (a < 0.01) discard;
+  vec3 c = mix(uColor, vec3(1.0), uCore * (1.0 - smoothstep(0.0, 0.5, d))); gl_FragColor = vec4(c, a); }`;
+const pointMats = [];
+function makeFlow(parent, getPaths, n, size, speed, token){
+  const mat = new THREE.ShaderMaterial({ uniforms: { uColor: { value: new THREE.Color() }, uScale: { value: 600 }, uCore: { value: .5 } }, vertexShader: pointVS, fragmentShader: pointFS, transparent: true, depthWrite: false, depthTest: false });
+  mat.userData.token = token; pointMats.push(mat);
+  const pos = new Float32Array(n * 3), alpha = new Float32Array(n), sz = new Float32Array(n);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1)); g.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+  const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.renderOrder = 10; parent.add(pts);
+  const u = new Float32Array(n); for (let i = 0; i < n; i++) u[i] = Math.random();
+  return { vis: 0, update(dt, on){
+    this.vis += ((on ? 1 : 0) - this.vis) * Math.min(1, dt * 4);
+    pts.visible = this.vis > .01; if (!pts.visible) return;
+    const paths = getPaths();
+    for (let i = 0; i < n; i++){
+      const path = paths[i % paths.length], len = path.getLength();
+      u[i] += dt * speed / len; if (u[i] > 1) u[i] -= 1;
+      const q = path.getPointAt(u[i]);
+      pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z;
+      alpha[i] = this.vis * .95 * smooth(0, .05, u[i]) * (1 - smooth(.93, 1, u[i])); sz[i] = size;
+    }
+    g.attributes.position.needsUpdate = true; g.attributes.aAlpha.needsUpdate = true; g.attributes.aSize.needsUpdate = true;
+  } };
+}
+const CRv = pts => new THREE.CatmullRomCurve3(pts.map(a => new V3(...a)));
+// lantern: battery -> board -> up the LED post (both cells)
+const usePaths = [CRv([[.0365, .022, -.019], [.04, .032, -.02], [.02, .043, -.01], [.0, .05, .0], [0, .07, .008], [0, .16, .012]]), CRv([[-.0335, .022, .019], [-.038, .032, .02], [-.02, .043, .01], [0, .05, 0], [0, .07, -.008], [0, .16, -.012]])];
+const lanternUse = makeFlow(lantern, () => usePaths, 28, .0035, .07, '--volt');
+// charging: along the cable -> socket -> board -> into the cells
+const chargeIn = [CRv([[-.06, .0306, 0], [-.04, .037, 0], [-.01, .043, -.01], [.035, .04, -.018], [.03, .022, -.019], [0, .022, -.019]]), CRv([[-.06, .0306, 0], [-.04, .037, 0], [-.02, .043, .01], [-.034, .04, .018], [-.03, .022, .019], [0, .022, .019]])];
+const cablePathFn = () => [cableCurve];
+const cableFlow = makeFlow(scene, cablePathFn, 40, .0035, .18, '--teal');
+const lanternCharge = makeFlow(lantern, () => chargeIn, 24, .0035, .06, '--teal');
+// giant cell outside wire: minus -> bulb -> plus when in use; reversed when charging
+const loopPts = [[-CELL_L / 2 - .004, 0, 0], [-CELL_L / 2 - .03, .03, 0], [-.1, CELL_R + .05, 0], [0, CELL_R + .06, 0], [.1, CELL_R + .05, 0], [CELL_L / 2 + .04, .03, 0], [CELL_L / 2 + .016, 0, 0]];
+const loopUse = [CRv(loopPts)], loopCharge = [CRv(loopPts.slice().reverse())];
+const giantUse = makeFlow(giant, () => loopUse, 22, .006, .08, '--volt');
+const giantCharge = makeFlow(giant, () => loopCharge, 22, .006, .08, '--teal');
+
+/* ---------------------------------------------------------------- state */
+const S = { explode: false, ep: 0, xray: false, xr: 0, step: 0, hovered: null, stepHL: new Set(),
+  charge: .8, on: true, plugged: false, plugK: 0, bright: 0, flatT: 0 };
+const DRAIN = 1 / 40, FILL = 1 / 22;
+const powered = () => S.on && (S.charge > 0 || S.plugK > .98);
+
+/* ---------------------------------------------------------------- theme tokens -> 3D colours */
+const HL = new THREE.Color(0xffb02e);
+let tealCol = new THREE.Color('#1a9e8f'), voltCol = new THREE.Color('#c4780f'), stopCol = new THREE.Color('#d23c5a');
+const warm = new THREE.Color(0xffb35a), globeOff = new THREE.Color(0xd5dbe0), globeOn = new THREE.Color(0xffc46e);
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const m of pointMats) m.uniforms.uColor.value.set(cs.getPropertyValue(m.userData.token).trim() || '#1f73b2');
+  tealCol = new THREE.Color(cs.getPropertyValue('--teal').trim() || '#1a9e8f');
+  voltCol = new THREE.Color(cs.getPropertyValue('--volt').trim() || '#c4780f');
+  stopCol = new THREE.Color(cs.getPropertyValue('--stop').trim() || '#d23c5a');
+  const sh = parseFloat(cs.getPropertyValue('--shadow')) || .24;
+  floorMat.opacity = sh; wallMat.opacity = sh * .55;
+}
+readTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+/* ---------------------------------------------------------------- explode labels */
+const labelLayer = $('#labels');
+for (const p of partList){
+  if (p.row !== 'lantern') continue;
+  const el = document.createElement('div');
+  el.className = 'lbl ' + p.side;
+  el.style.setProperty('--stem', p.stem + 'px');
+  el.innerHTML = '<span class="lbl-pin"></span><span class="lbl-stem"></span><span class="lbl-name"></span>';
+  el.querySelector('.lbl-name').textContent = p.name;
+  labelLayer.appendChild(el); p.labelEl = el;
+}
+const projV = new V3();
+let W = 1, Hh = 1;
+function updateLabels(){
+  const vis = smooth(.72, 1, S.ep);
+  for (const p of partList){
+    const el = p.labelEl; if (!el) continue;
+    if (vis < .01){ if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'; continue; }
+    projV.copy(p.anchor); p.group.localToWorld(projV); projV.project(camera);
+    if (projV.z > 1){ el.style.visibility = 'hidden'; continue; }
+    const x = (projV.x * .5 + .5) * W, y = (-projV.y * .5 + .5) * Hh;
+    el.style.visibility = 'visible'; el.style.opacity = vis.toFixed(3);
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(${p.side === 'right' ? '-3px' : 'calc(-100% + 3px)'}, -50%)`;
+    el.classList.toggle('hot', S.hovered === p);
+  }
+}
+
+/* ---------------------------------------------------------------- camera framing */
+const mast = $('#mast'), hud = $('#hud'), guide = $('#guide'), dock = $('#dock');
+let insets = { left: 0, right: 0, top: 0, bottom: 0 };
+function computeInsets(){
+  const app = $('#app').getBoundingClientRect(), narrow = app.width <= 760;
+  const m = mast.getBoundingClientRect(), h = hud.getBoundingClientRect(), g = guide.getBoundingClientRect(), d = dock.getBoundingClientRect();
+  if (narrow) insets = { left: 0, right: 0, top: m.bottom - app.top + 4, bottom: app.bottom - h.top + 6 };
+  else insets = { left: 0, right: guide.classList.contains('collapsed') ? 0 : app.right - g.left + 8, top: (m.bottom - app.top) * .5, bottom: (app.bottom - d.top) * .7 };
+}
+function resize(){
+  const r = $('#app').getBoundingClientRect();
+  W = Math.max(1, r.width); Hh = Math.max(1, r.height);
+  renderer.setSize(W, Hh, false);
+  camera.aspect = W / Hh;
+  computeInsets();
+  camera.setViewOffset(W, Hh, (insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2, W, Hh);
+  camera.updateProjectionMatrix();
+  const scale = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+  for (const m of pointMats) m.uniforms.uScale.value = scale;
+}
+const VIEWS = {
+  overview: { t: [.13, .12, -.02], d: [-.15, .42, 1], w: .7, h: .36 },
+  front: { t: [0, .12, 0], d: [.25, .25, 1], w: .26, h: .28 },
+  inside: { t: [0, .034, 0], d: [.3, .32, 1], w: .2, h: .15 },
+  cell: { t: [G.x, G.y + .02, G.z], d: [.08, .32, 1], w: .4, h: .26 },
+  cellClose: { t: [G.x, G.y + .015, G.z + .01], d: [.05, .38, 1], w: .4, h: .24 },
+  charger: { t: [-.12, .12, -.12], d: [-.25, .4, 1], w: .4, h: .32 }
+};
+function explodeView(){ return { t: [0, stackTop / 2 + .01, 0], d: [.2, .35, 1], w: .32, h: stackTop + .06 }; }
+function viewPose(v){
+  const fov = camera.fov * Math.PI / 180, tn = 2 * Math.tan(fov / 2);
+  const fw = Math.max(120, W - insets.left - insets.right), fh = Math.max(120, Hh - insets.top - insets.bottom);
+  const dist = Math.max(v.h * Hh / (fh * tn), v.w * Hh / (fw * tn)) * 1.08;
+  const t = new V3(...v.t), dir = new V3(...v.d).normalize();
+  return { t, p: t.clone().addScaledVector(dir, dist) };
+}
+let tween = null;
+function flyTo(v, dur = 1.15){
+  const to = viewPose(v);
+  if (reduceMotion){ camera.position.copy(to.p); controls.target.copy(to.t); controls.update(); tween = null; return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), to, t: 0, dur };
+}
+let dragging = false;
+controls.addEventListener('start', () => { tween = null; dragging = true; hideTip(); });
+controls.addEventListener('end', () => { dragging = false; });
+
+/* ---------------------------------------------------------------- walkthrough */
+const STEPS = [
+  { title: 'Hello, lantern!', view: 'overview', on: true, plug: false, hl: [],
+    body: 'This lantern has no wire, but it can still glow. That’s because it has a battery inside. A battery keeps electricity stored for later, a bit like a lunchbox keeps food for later. Let’s watch it go flat and then fill it up again. Press Next to start.',
+    spec: 'Look at the battery number at the top. Watch it go down while the light is on.' },
+  { title: 'Switch it on', view: 'front', on: true, plug: false, hl: ['controls', 'leds'],
+    body: 'Press the button and electricity flows out of the battery, up to the little lights. The four dots on the front show how full the battery is. All four means full. One means it’s nearly empty.',
+    spec: 'Press Light at the bottom to switch it off and on. When it’s off, the battery stops going down.' },
+  { title: 'What’s inside?', view: 'inside', xray: true, on: true, plug: false, hl: ['cells', 'board'],
+    body: 'Inside the base are two battery cells, the same kind you find in phones and laptops. Next to them is a little circuit board. It’s the lantern’s brain, and it sends the electricity to the lights.',
+    spec: 'Press Explode to take the lantern apart and see every piece.' },
+  { title: 'Inside one cell', view: 'cell', on: true, plug: false, hl: ['giantCell'],
+    body: 'This is one battery cell, made giant and cut open. It has two sides: a minus side and a plus side, with a thin wall in the middle. The gold balls are tiny bits of energy. When the battery is full, they are all squeezed into the minus side.',
+    spec: 'Count the gold balls on the grey minus side and on the purple plus side.' },
+  { title: 'Using the battery', view: 'cellClose', on: true, plug: false, minCharge: .6, hl: ['giantCell'],
+    body: 'When the light is on, the gold balls slowly move across the thin wall to the plus side. Each time one moves, it pushes a little electricity around the wire to the light. That’s what makes the light glow.',
+    spec: 'Watch a ball slip through the middle wall, and see the little bulb on top glow.' },
+  { title: 'Going flat', view: 'overview', on: true, plug: false, setCharge: .14, hl: ['cells'],
+    body: 'When all the gold balls have moved to the plus side, there is nothing left to push. The battery is flat! The light gets dim and then goes out, and the lantern gets very sleepy.',
+    spec: 'Watch the dots on the lantern go out one by one, until the light switches off.' },
+  { title: 'Charging', view: 'charger', on: false, plug: true, maxCharge: .3, hl: ['charger', 'cable'],
+    body: 'To fill the battery up, we plug in the charger. Electricity from the wall goes down the cable and pushes the gold balls back to the minus side, like winding up a toy car. The charger’s light is red while it works.',
+    spec: 'Press Charger at the bottom to plug it in or pull it out.' },
+  { title: 'Full again!', view: 'cell', on: false, plug: true, setCharge: .78, hl: ['giantCell'],
+    body: 'When every gold ball is back on the minus side, the battery is full and the charger light turns green. Batteries can be charged hundreds of times. Never poke, bend or wet a battery, and if one ever gets puffy or hot, tell a grown-up.',
+    spec: 'Wait for the charger light to turn green, then press Charger to unplug and Light to switch the lantern on.' }
+];
+const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
+for (let i = 1; i < STEPS.length; i++){
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('aria-label', `Step ${i}: ${STEPS[i].title}`); b.addEventListener('click', () => goStep(i));
+  li.appendChild(b); gDots.appendChild(li);
+}
+function goStep(i){
+  const s = STEPS[i]; S.step = i;
+  gTitle.textContent = s.title; gBody.textContent = s.body; gSpec.textContent = s.spec;
+  gCount.textContent = i === 0 ? 'Overview' : `Step ${i} of ${STEPS.length - 1}`;
+  gPrev.disabled = i === 0;
+  gNext.textContent = i === 0 ? 'Start' : (i === STEPS.length - 1 ? 'Finish' : 'Next');
+  [...gDots.querySelectorAll('button')].forEach((b, k) => { const n = k + 1; b.classList.toggle('done', n < i); if (n === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  if (S.explode) setExplode(false, false);
+  if (s.setCharge !== undefined) S.charge = s.setCharge;
+  if (s.minCharge !== undefined) S.charge = Math.max(S.charge, s.minCharge);
+  if (s.maxCharge !== undefined) S.charge = Math.min(S.charge, s.maxCharge);
+  setOn(s.on); setPlug(s.plug);
+  setXray(!!s.xray);
+  S.stepHL = new Set(s.hl);
+  flyTo(VIEWS[s.view]);
+}
+gPrev.addEventListener('click', () => goStep(Math.max(0, S.step - 1)));
+gNext.addEventListener('click', () => goStep(S.step >= STEPS.length - 1 ? 0 : S.step + 1));
+
+/* ---------------------------------------------------------------- controls */
+const btnLight = $('#btn-light'), btnPlug = $('#btn-plug'), btnX = $('#btn-xray'), btnE = $('#btn-explode');
+function setOn(on){ S.on = on; btnLight.setAttribute('aria-pressed', String(on)); }
+function setPlug(on){ S.plugged = on; btnPlug.setAttribute('aria-pressed', String(on)); }
+function setXray(on){ S.xray = on; btnX.setAttribute('aria-pressed', String(on)); }
+function setExplode(on, fly = true){
+  S.explode = on; btnE.setAttribute('aria-pressed', String(on)); btnE.textContent = on ? 'Reassemble' : 'Explode';
+  if (on){ if (fly) flyTo(explodeView(), 1.3); }
+  else if (fly) flyTo(VIEWS[STEPS[S.step].view], .7);
+}
+btnLight.addEventListener('click', () => { if (S.explode) setExplode(false); setOn(!S.on); });
+btnPlug.addEventListener('click', () => { if (S.explode) setExplode(false); setPlug(!S.plugged); });
+btnX.addEventListener('click', () => setXray(!S.xray));
+btnE.addEventListener('click', () => setExplode(!S.explode));
+$('#btn-reset').addEventListener('click', () => flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view]));
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight' && S.step < STEPS.length - 1) goStep(S.step + 1);
+  else if (e.key === 'ArrowLeft' && S.step > 0) goStep(S.step - 1);
+});
+if (coarse) $('#hint').textContent = 'Drag to orbit, pinch to zoom, tap any part to see what it does.';
+
+/* ---------------------------------------------------------------- hover / tap picking */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickables = partList.flatMap(p => p.meshes);
+const tip = $('#tip'), tipName = $('#tip-name'), tipDesc = $('#tip-desc');
+let pointer = null, needPick = false, downAt = null;
+function pick(cx, cy){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  const xr = S.xr > .5 && S.ep < .05;
+  let shell = null;
+  for (const h of hits){ const u = h.object.userData; if (u.shell && xr){ if (!shell) shell = u.part; continue; } return u.part; }
+  return shell;
+}
+function showTip(p, cx, cy){
+  if (!p){ hideTip(); return; }
+  tipName.textContent = p.name; tipDesc.textContent = p.desc; tip.hidden = false;
+  const r = $('#app').getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = cx - r.left + 16, y = cy - r.top + 18;
+  if (x + tw > r.width - 12) x = cx - r.left - tw - 14;
+  if (y + th > r.height - 12) y = cy - r.top - th - 14;
+  tip.style.transform = `translate(${Math.max(12, x)}px, ${Math.max(12, y)}px)`;
+}
+function hideTip(){ tip.hidden = true; S.hovered = null; canvas.classList.remove('pick'); }
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pointer = { x: e.clientX, y: e.clientY }; needPick = true; });
+canvas.addEventListener('pointerleave', () => { pointer = null; hideTip(); });
+canvas.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !downAt) return;
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8 && performance.now() - downAt.t < 450){ const p = pick(e.clientX, e.clientY); S.hovered = p; showTip(p, e.clientX, e.clientY); }
+});
+
+/* ---------------------------------------------------------------- readout */
+const roBat = $('#ro-bat'), roMeter = $('#ro-meter'), roLight = $('#ro-light'), roState = $('#ro-state');
+let roT = 0;
+const charging = () => S.plugK > .98 && S.charge < 1;
+function mood(){
+  if (charging()) return 'charging';
+  if (S.plugK > .98 && S.charge >= 1) return 'full';
+  if (S.charge <= 0) return 'flat';
+  if (!S.on) return 'rest';
+  if (S.charge < .25) return 'tired';
+  return 'happy';
+}
+function updateReadout(){
+  const b = Math.round(S.charge * 100);
+  roBat.textContent = b + '%'; roMeter.firstElementChild.style.width = `calc(${b}% - 2px)`; roMeter.classList.toggle('low', b < 25);
+  roLight.textContent = !S.on ? 'Off' : !powered() ? 'No power' : (S.bright < .6 && !S.explode) ? 'Dim' : 'On';
+  roState.textContent = S.explode ? 'Taken apart' : ({ charging: 'Charging, yum!', full: 'Full!', flat: 'Flat, needs charging', rest: 'Resting', tired: 'Getting sleepy', happy: 'Glowing' })[mood()];
+}
+
+/* ---------------------------------------------------------------- frame update */
+function applyHighlight(p, k){
+  for (const m of p.mats){ m.color.copy(m.userData.base).lerp(HL, .5 * k); if (m.emissive && !MANAGED.has(m)) m.emissive.copy(HL).multiplyScalar(.3 * k); }
+}
+const bm = new THREE.Matrix4(), bq = new THREE.Quaternion(), bp = new V3(), bs = new V3(), q1 = new V3(), q2 = new V3();
+function update(dt, t){
+  const hold = S.explode || S.ep > .001;
+
+  // charger cable slides in and out
+  S.plugK = clamp(S.plugK + (S.plugged ? 1 : -1) * dt / .7, 0, 1);
+  setCable(S.plugK);
+  const plugIn = S.plugK > .98;
+
+  // battery level
+  const using = S.on && S.charge > 0 && !hold;
+  if (using) S.charge -= DRAIN * dt;
+  if (plugIn && !hold) S.charge += FILL * dt;
+  S.charge = clamp(S.charge, 0, 1);
+
+  // brightness: dims as the battery runs low, flickers at the very end
+  let tb = 0;
+  if (S.on && !hold){
+    if (plugIn) tb = 1;
+    else if (S.charge > 0) tb = S.charge > .15 ? 1 : .35 + .65 * S.charge / .15;
+    if (!plugIn && S.charge > 0 && S.charge < .04) tb *= .55 + .45 * Math.abs(Math.sin(t * 23) * Math.sin(t * 7));
+  }
+  S.bright += (tb - S.bright) * Math.min(1, dt * 8);
+  ledMat.emissive.copy(warm).multiplyScalar(2.2 * S.bright);
+  globeMat.color.copy(globeOff).lerp(globeOn, S.bright); globeMat.userData.base.copy(globeMat.color);
+  globeMat.emissive.copy(warm).multiplyScalar(.5 * S.bright);
+  glowLight.intensity = 2 * S.bright;
+  bulbMat.emissive.copy(warm).multiplyScalar(using ? 1.4 * S.bright : 0);
+  drawFace(mood());
+
+  // battery dots: lit by quarters; while charging the next one blinks; when flat the first blinks red
+  const lit = Math.ceil(S.charge * 4 - 1e-6);
+  for (let i = 0; i < 4; i++){
+    const m = dotMats[i];
+    if (S.charge <= 0 && i === 0) m.emissive.copy(stopCol).multiplyScalar(Math.sin(t * 6) > 0 ? 1 : .1);
+    else if (i < lit - (charging() ? 1 : 0)) m.emissive.copy(tealCol).multiplyScalar(1.2);
+    else if (charging() && i === lit - 1) m.emissive.copy(tealCol).multiplyScalar(.4 + .8 * (.5 + .5 * Math.sin(t * 5)));
+    else m.emissive.setRGB(0, 0, 0);
+  }
+  if (!plugIn) chargerLedMat.emissive.setRGB(0, 0, 0);
+  else if (S.charge >= 1) chargerLedMat.emissive.copy(tealCol).multiplyScalar(1.4);
+  else chargerLedMat.emissive.copy(stopCol).multiplyScalar(1.3);
+
+  // the energy balls follow the charge: ball i sits on the minus side while i < charge * N
+  const full = S.charge * ballsMax;
+  for (let i = 0; i < ballsMax; i++){
+    const b = balls[i], target = i < full ? 0 : 1;
+    b.p += clamp(target - b.p, -dt * 1.1, dt * 1.1);
+    const k = easeIO(b.p);
+    // quadratic path through the separator
+    q1.copy(b.a).lerp(b.mid, k); q2.copy(b.mid).lerp(b.c, k); bp.copy(q1).lerp(q2, k);
+    const jig = .0012 * Math.sin(t * 3 + b.wob); bp.y += jig;
+    bs.setScalar(.0062); bm.compose(bp, bq, bs); ballMesh.setMatrixAt(i, bm);
+  }
+  ballMesh.instanceMatrix.needsUpdate = true;
+
+  // explode: parts lift straight up
+  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
+  for (const p of partList){
+    if (p.row !== 'lantern') continue;
+    const local = clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1);
+    p.group.position.y = p.base.y + easeIO(local) * p.dist;
+  }
+
+  // x-ray shells
+  const xT = (S.xray && S.ep < .02) ? 1 : 0;
+  S.xr += (xT - S.xr) * Math.min(1, dt * 6);
+  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .85 * S.xr); m.depthWrite = S.xr < .25 && m !== globeMat; }
+
+  // highlights
+  const pulseK = .36 + .26 * Math.sin(t * 3.4);
+  for (const p of partList){
+    const tg = S.hovered === p ? 1 : (S.stepHL.has(p.id) && S.ep < .02 ? pulseK : 0);
+    let nh = p.hl + (tg - p.hl) * Math.min(1, dt * 12);
+    if (tg === 0 && nh < .004) nh = 0;
+    if (nh !== p.hl){ p.hl = nh; applyHighlight(p, nh); }
+  }
+
+  // flows
+  lanternUse.update(dt, using && !plugIn);
+  giantUse.update(dt, using && !plugIn);
+  const chg = plugIn && S.charge < 1 && !hold;
+  cableFlow.update(dt, plugIn && !hold && (S.charge < 1 || S.on));
+  lanternCharge.update(dt, chg);
+  giantCharge.update(dt, chg);
+
+  // camera tween
+  if (tween){
+    tween.t += dt; const k = easeIO(clamp(tween.t / tween.dur, 0, 1));
+    camera.position.lerpVectors(tween.p0, tween.to.p, k);
+    controls.target.lerpVectors(tween.t0, tween.to.t, k);
+    if (k >= 1) tween = null;
+  }
+
+  if (needPick && pointer && !dragging){
+    needPick = false;
+    const p = pick(pointer.x, pointer.y);
+    S.hovered = p; canvas.classList.toggle('pick', !!p);
+    if (p) showTip(p, pointer.x, pointer.y); else tip.hidden = true;
+  }
+  roT += dt; if (roT > .1){ roT = 0; updateReadout(); }
+}
+
+/* ---------------------------------------------------------------- go */
+for (const b of balls) b.p = balls.indexOf(b) < S.charge * ballsMax ? 0 : 1;
+setCable(0);
+resize();
+window.addEventListener('resize', resize);
+if ('ResizeObserver' in window) new ResizeObserver(() => resize()).observe(guide);
+/* ---------------------------------------------------------------- fold the walkthrough card */
+{
+  const tgl = $('#g-toggle'), foldTxt = $('#g-fold-txt');
+  let downY = null, swiped = false;
+  function setCollapsed(on){
+    if (guide.classList.contains('collapsed') === on) return;
+    guide.classList.toggle('collapsed', on);
+    tgl.setAttribute('aria-expanded', String(!on));
+    tgl.title = on ? 'Tap or swipe up to show' : 'Tap or swipe down to hide';
+    foldTxt.textContent = on ? 'Show' : 'Hide';
+    resize();
+    flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view], .8);
+  }
+  tgl.addEventListener('click', () => { if (swiped){ swiped = false; return; } setCollapsed(!guide.classList.contains('collapsed')); });
+  tgl.addEventListener('pointerdown', e => { downY = e.clientY; swiped = false; });
+  tgl.addEventListener('pointerup', e => {
+    if (downY === null) return;
+    const dy = e.clientY - downY; downY = null;
+    if (dy > 30){ swiped = true; setCollapsed(true); }
+    else if (dy < -30){ swiped = true; setCollapsed(false); }
+  });
+  tgl.addEventListener('pointercancel', () => { downY = null; });
+}
+goStep(0);
+resize();
+{ const v = viewPose(VIEWS.overview); camera.position.copy(v.p); controls.target.copy(v.t); tween = null; controls.update(); }
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt, now / 1000);
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

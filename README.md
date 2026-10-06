@@ -7,6 +7,7 @@ Interactive 3D models of everyday machines. The home page is a menu, and each ma
 | Pedestal Fan | `fan/` |
 | Robot Vacuum | `robot-vacuum/` |
 | Surge Protector | `surge-protector/` |
+| Battery | `battery/` |
 
 Live site: https://elzanneamao.github.io/ElectricFAAN/
 
