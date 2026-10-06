@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta property="og:title" content="Inside a Surge Protector">
-<meta property="og:description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back after loadshedding.">
+<meta property="og:description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back on, or lightning strikes in a storm.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E">
 <title>Inside a Surge Protector</title>
-<meta name="description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back after loadshedding.">
+<meta name="description" content="Interactive 3D surge protector plug: see how it keeps a fridge’s motor safe when the power comes back on, or lightning strikes in a storm.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..800&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..600&display=swap">
@@ -231,7 +231,7 @@ body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
 
   <div class="hud" id="hud">
     <nav class="dock" id="dock" aria-label="Power controls">
-      <button class="btn" id="btn-power" aria-pressed="false"><span class="lamp"></span>Loadshedding</button>
+      <button class="btn" id="btn-power" aria-pressed="false"><span class="lamp"></span>Power cut</button>
       <button class="btn" id="btn-protect" aria-pressed="true"><span class="lamp"></span>Protector</button>
       <button class="btn" id="btn-xray" aria-pressed="false"><span class="lamp"></span>See inside</button>
       <button class="btn primary" id="btn-explode" aria-pressed="false">Explode</button>
@@ -865,26 +865,26 @@ const STEPS = [
     body: 'Electricity travels from the power station along long wires, all the way to the socket in your wall. The surge protector’s three metal pins push into the socket so the electricity can flow in. Plugs and wall sockets are only for grown-ups to touch.',
     spec: 'Watch the orange dots flow out of the wall, through the plug and along the cord to the fridge.' },
   { title: 'Brass roads inside', view: 'inside', xray: true, power: true, hl: ['contacts'],
-    body: 'Inside the plug are shiny brass strips. They are like little roads that carry the electricity from the pins at the back to the holes at the front. The fridge’s plug pushes into those holes.',
-    spec: 'Press Explode to pull the surge protector apart and see every piece.' },
+    body: 'Inside the plug are shiny brass strips. Think of them as little roads. The electricity travels along them, from the pins at the back to the holes at the front. The fridge plugs into those holes.',
+    spec: 'Press Explode to take the plug apart and see every piece.' },
   { title: 'The fridge’s motor', view: 'motor', power: true, hl: ['compressor'],
     body: 'At the back of the fridge is a motor called a compressor. It hums and pumps cold through the pipes to keep your food cold. Motors like their electricity nice and steady, the same amount all the time.',
     spec: 'Watch the motor wobble a little as it hums. That means it is working.' },
-  { title: 'Loadshedding!', view: 'overview', power: false, hl: [],
-    body: 'During loadshedding, Eskom switches the electricity off. Everything goes quiet and the fridge’s motor stops. When the power comes back on, it can rush back too fast, all at once. That big rush is called a surge, like a wave splashing over the side of the pool.',
-    spec: 'Press Loadshedding at the bottom to turn the power back on, and watch the pink zap.' },
+  { title: 'Big zaps', view: 'overview', power: false, hl: [],
+    body: 'Sometimes electricity rushes in all at once. This big rush is called a surge, and motors don’t like it. A surge can happen when lightning strikes in a storm. It can happen when the power goes off and comes back on. It can also happen when a house switches between the main power and solar panels or a battery.',
+    spec: 'The power is off. Press the Power cut button to turn it back on, and watch the pink zap.' },
   { title: 'The surge catcher', view: 'mov', xray: true, power: true, auto: 'surge', hl: ['mov'],
-    body: 'This blue disc is the surge catcher. Its grown-up name is an MOV. When the electricity is normal, it does nothing. When a surge rushes in, it opens a side door and sends the extra electricity away through the earth pin, into the ground. Only the right amount goes on to the fridge.',
-    spec: 'Watch the pink dots go into the blue disc and out through the top pin. Press Loadshedding twice to see it again.' },
+    body: 'This blue disc is the surge catcher. Most of the time it just waits. When a surge comes, it grabs the extra electricity and sends it out through the top pin, into the ground. The fridge only gets the amount it needs.',
+    spec: 'Watch the pink dots go into the blue disc and out the top pin. Press Power cut twice to see it again.' },
   { title: 'The brave little fuse', view: 'mov', xray: true, power: true, hl: ['fuse'],
-    body: 'Next to the surge catcher is a tiny fuse. If a giant zap comes, like lightning, the fuse breaks on purpose to stop it. After that the surge protector can’t guard anymore, and a grown-up needs to get a new one.',
+    body: 'Next to the blue disc is a tiny fuse. It is the last guard. If a zap is too big, even for the blue disc, the fuse breaks on purpose. That stops the electricity. Then a grown-up needs to get a new surge protector.',
     spec: 'Tap or hover over the little silver tube next to the blue disc.' },
   { title: 'The guard light', view: 'led', power: true, hl: ['led'],
     body: 'The little light on the front means the surge protector is on guard. If the light stays off while the power is on, the fuse has done its job and it is time for a new surge protector.',
-    spec: 'Press Loadshedding and watch the light go out. It comes back on with the power.' },
+    spec: 'Press Power cut and watch the light go out. It comes back on with the power.' },
   { title: 'Without a protector', view: 'motorWide', power: true, protect: false, auto: 'surge', hl: ['compressor'],
-    body: 'Now the surge protector is switched off, like a plain adaptor. When the surge comes, it rushes straight into the fridge’s motor. Ouch! Big surges can break motors for real. That is why families use surge protectors when there is loadshedding.',
-    spec: 'Press Protector to switch it back on, then press Loadshedding twice to see the difference.' }
+    body: 'Now the surge protector is switched off, like a plain adaptor. When the surge comes, it rushes straight into the fridge’s motor. Ouch! Big surges can break motors for real. That is why families plug their fridges and TVs into surge protectors.',
+    spec: 'Press Protector to switch it back on, then press Power cut twice to see the difference.' }
 ];
 const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
 for (let i = 1; i < STEPS.length; i++){
@@ -982,7 +982,7 @@ function updateReadout(){
   roWall.textContent = Math.round(S.wallV).toLocaleString('en-US') + ' V';
   roFridge.textContent = Math.round(S.fridgeV).toLocaleString('en-US') + ' V';
   roWall.classList.toggle('hot', S.wallV > 300); roFridge.classList.toggle('hot', S.fridgeV > 300);
-  roState.textContent = S.explode ? 'Waiting' : !S.power ? 'Sleeping (loadshedding)' : S.ouch > 0 ? 'Ouch!' : (S.surgeT >= 0 && S.protect && S.surgeT < 1.6) ? 'Safe, phew!' : 'Humming';
+  roState.textContent = S.explode ? 'Waiting' : !S.power ? 'Sleeping (power off)' : S.ouch > 0 ? 'Ouch!' : (S.surgeT >= 0 && S.protect && S.surgeT < 1.6) ? 'Safe, phew!' : 'Humming';
 }
 
 /* ---------------------------------------------------------------- frame update */
@@ -1008,7 +1008,7 @@ function update(dt, t){
   S.wallV = S.power ? 230 + jitter + 1400 * env : 0;
   S.fridgeV = !S.power ? 0 : S.protect ? 230 + jitter + Math.min(1400 * env, 42 * Math.min(1, env * 6)) : S.wallV;
 
-  // room light dims during loadshedding
+  // room light dims while the power is off
   S.light += ((S.power ? 1 : .55) - S.light) * Math.min(1, dt * 3);
   hemi.intensity = LIGHT_BASE.hemi * S.light; key.intensity = LIGHT_BASE.key * S.light; rimLight.intensity = LIGHT_BASE.rim * S.light;
 
