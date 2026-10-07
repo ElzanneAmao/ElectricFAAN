@@ -9,6 +9,7 @@ Interactive 3D models of everyday machines. The home page is a menu, and each ma
 | Surge Protector | `surge-protector/` |
 | Battery | `battery/` |
 | The Journey of Electricity | `power-journey/` |
+| Electric Car | `electric-car/` |
 
 Live site: https://elzanneamao.github.io/ElectricFAAN/
 

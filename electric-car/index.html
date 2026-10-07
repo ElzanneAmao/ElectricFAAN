@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9e0e4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10181d" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta property="og:title" content="Inside an Electric Car">
+<meta property="og:description" content="Interactive 3D lime-green electric car charging in a garage: follow the electricity from the wall charger into the battery, then go for a drive.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9A%97%3C/text%3E%3C/svg%3E">
+<title>Inside an Electric Car</title>
+<meta name="description" content="Interactive 3D lime-green electric car charging in a garage: follow the electricity from the wall charger into the battery, then go for a drive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Londrina+Solid:wght@300;400;900&family=Literata:ital,opsz,wght@0,7..72,400..700;1,7..72,400&display=swap">
+<style>
+/* Layout: a full-bleed 3D stage with a rechargeable lantern, its charger and a giant cut-open battery cell. The title sits on the stage top-left like a rating plate,
+   the lantern's controls dock bottom-left, and the walkthrough is the one card (bottom-right; stacked under the stage on phones). */
+:root{
+  --bg:#d9e0e4; --bg-hi:#eff3f4; --ink:#14212a; --muted:#52616b; --line:rgba(20,33,42,.14);
+  --panel:rgba(248,250,250,.88); --panel-solid:#f8fafa; --glass:rgba(20,33,42,.10);
+  --volt:#c4780f; --air:#1f73b2; --lamp:#b6c0c6; --teal:#1a9e8f; --stop:#d23c5a;
+  --primary:#14212a; --on-primary:#f2f5f6; --shadow:.24; --pink:#b2306b; --pink-soft:rgba(178,48,107,.12);
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+    --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+    --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+    --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181d; --bg-hi:#1b262d; --ink:#e5ecef; --muted:#97a6af; --line:rgba(229,236,239,.14);
+  --panel:rgba(21,30,36,.88); --panel-solid:#162027; --glass:rgba(0,0,0,.35);
+  --volt:#f0a43c; --air:#6dbdf2; --lamp:#3a4850; --teal:#4fd1c0; --stop:#ff7d96;
+  --primary:#e5ecef; --on-primary:#10181d; --shadow:.5; --pink:#f590c0; --pink-soft:rgba(245,144,192,.16); color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{
+  margin:0; overflow:hidden; color:var(--ink); font-family:var(--f-body); font-size:15px;
+  background-color:var(--bg);
+  background-image:radial-gradient(120% 85% at 38% 22%, var(--bg-hi), var(--bg) 72%);
+}
+.app{position:relative; height:100%; overflow:hidden}
+#stage{position:absolute; inset:0; width:100%; height:100%; display:block; outline:none; cursor:grab}
+#stage.pick{cursor:pointer}
+#stage:active{cursor:grabbing}
+
+.masthead{position:absolute; top:22px; left:24px; max-width:min(440px, calc(100% - 48px)); pointer-events:none; display:grid; gap:8px}
+.plate{justify-self:start; margin:0; font:500 11px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:3px; padding:5px 8px}
+h1{margin:0; font-family:var(--f-display); font-weight:780; font-stretch:125%; font-size:clamp(1.45rem, 2.5vw, 2.3rem); line-height:1.02; letter-spacing:-.012em; text-wrap:balance}
+.hint{margin:0; color:var(--muted); font-size:.92rem; line-height:1.45; max-width:42ch}
+.readout{display:flex; flex-wrap:wrap; gap:6px 20px; margin:4px 0 0}
+.readout div{display:grid; gap:2px}
+.readout dt{font:500 10px/1 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.readout dd{margin:0; font:500 13.5px/1.2 var(--f-mono); font-variant-numeric:tabular-nums}
+.meter{display:inline-block; width:34px; height:9px; margin-right:7px; vertical-align:0; border:1px solid var(--muted); border-radius:2px; position:relative}
+.meter i{position:absolute; left:1px; top:1px; bottom:1px; width:0; background:var(--teal); border-radius:1px}
+.meter.low i{background:var(--volt)}
+
+.hud{position:absolute; left:20px; right:20px; bottom:20px; display:flex; align-items:flex-end; justify-content:space-between; gap:16px; pointer-events:none}
+.hud > *{pointer-events:auto}
+.dock{display:flex; flex-wrap:wrap; align-items:center; gap:10px; min-width:0}
+.btn{
+  height:40px; padding:0 14px; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap;
+  font:500 14px/1 var(--f-body); color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:8px;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+}
+.btn:hover{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.lamp{width:8px; height:8px; border-radius:50%; background:var(--lamp); transition:background-color .2s, box-shadow .2s}
+.btn[aria-pressed="true"] .lamp{background:var(--teal); box-shadow:0 0 0 3px color-mix(in srgb, var(--teal) 25%, transparent)}
+.btn.primary{background:var(--primary); color:var(--on-primary); border-color:var(--primary); font-family:var(--f-display); font-weight:680; font-stretch:115%; letter-spacing:.01em; padding:0 18px}
+.btn.primary:hover{filter:brightness(1.12)}
+.btn.plain-btn{background:transparent; border-color:transparent; backdrop-filter:none; -webkit-backdrop-filter:none; color:var(--muted); padding:0 8px}
+.btn.plain-btn:hover{color:var(--ink)}
+button:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+.guide{
+  width:348px; flex:none; box-sizing:border-box; padding:18px 20px 16px; display:grid; gap:10px;
+  background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 12px 32px var(--glass);
+}
+.guide-head{display:flex; justify-content:space-between; align-items:baseline; gap:12px}
+.eyebrow{font:500 10.5px/1 var(--f-mono); letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.count{font:500 11px/1 var(--f-mono); color:var(--muted); font-variant-numeric:tabular-nums}
+.guide h2{margin:0; font-family:var(--f-display); font-weight:720; font-stretch:112%; font-size:1.22rem; line-height:1.15; text-wrap:balance}
+.guide-body{margin:0; font-size:1.02rem; line-height:1.6; min-width:0}
+.spec{margin:0; padding-top:10px; border-top:1px dashed var(--line); font-size:.92rem; line-height:1.5; color:var(--ink)}
+.try{display:inline-block; margin-right:8px; padding:3px 7px; border-radius:4px; font:500 10px/1.2 var(--f-mono); letter-spacing:.09em; text-transform:uppercase; color:var(--pink); background:var(--pink-soft); vertical-align:1px}
+.guide-nav{display:flex; align-items:center; gap:10px; margin-top:4px}
+.dots{display:flex; gap:4px; list-style:none; margin:0; padding:0; flex:1; justify-content:center}
+.dots button{width:16px; height:16px; padding:0; border:0; background:none; cursor:pointer; display:grid; place-items:center}
+.dots button::before{content:""; width:14px; height:4px; border-radius:2px; background:var(--line); transition:background-color .2s}
+.dots button.done::before{background:color-mix(in srgb, var(--ink) 35%, transparent)}
+.dots button[aria-current="step"]::before{background:var(--pink)}
+.nav-btn{height:34px; padding:0 12px; font:500 13.5px/1 var(--f-body); cursor:pointer; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:7px; white-space:nowrap}
+.nav-btn:disabled{opacity:.4; cursor:default}
+.nav-btn.next{background:var(--primary); color:var(--on-primary); border-color:var(--primary)}
+
+.tip{
+  position:absolute; left:0; top:0; z-index:5; max-width:280px; pointer-events:none; padding:9px 11px 10px;
+  background:var(--panel-solid); border:1px solid var(--line); border-radius:8px; box-shadow:0 8px 24px var(--glass);
+  display:grid; gap:3px; font-size:13px; line-height:1.4;
+}
+.tip b{font-family:var(--f-display); font-weight:700; font-stretch:112%; font-size:13.5px; color:var(--ink)}
+.tip span{color:var(--muted)}
+
+.labels{position:absolute; inset:0; pointer-events:none; overflow:hidden}
+.lbl{position:absolute; left:0; top:0; display:flex; align-items:center; will-change:transform; visibility:hidden}
+.lbl.right{flex-direction:row}
+.lbl.left{flex-direction:row-reverse}
+.lbl-pin{width:6px; height:6px; border-radius:50%; background:var(--pink); box-shadow:0 0 0 2px var(--panel-solid); flex:none}
+.lbl-stem{height:1px; width:var(--stem, 24px); background:var(--ink); opacity:.4; flex:none}
+.lbl-name{
+  font:640 11.5px/1.15 var(--f-display); font-stretch:110%; white-space:nowrap; color:var(--ink);
+  padding:4px 7px; border-radius:4px; background:var(--panel-solid); border:1px solid var(--line); box-shadow:0 2px 8px var(--glass);
+}
+.lbl.hot .lbl-name{border-color:var(--pink); box-shadow:0 0 0 2px var(--pink-soft)}
+
+.fail{position:absolute; inset:0; display:grid; place-items:center; padding-inline:24px}
+.fail div{max-width:420px; background:var(--panel-solid); border:1px solid var(--line); border-radius:12px; padding:20px 22px}
+.fail h2{margin:0 0 6px; font-family:var(--f-display); font-stretch:112%}
+.fail p{margin:0; color:var(--muted); line-height:1.5}
+
+@media (max-width: 760px){
+  .masthead{top:14px; left:16px; right:16px; max-width:none; gap:6px}
+  h1{font-size:1.3rem}
+  .hint{display:none}
+  .readout dd{font-size:12.5px}
+  .hud{left:12px; right:12px; bottom:12px; flex-direction:column; align-items:stretch; gap:8px}
+  .dock{gap:6px}
+  .btn{height:36px; padding:0 11px; font-size:13px}
+  .btn.primary{padding:0 14px}
+  .guide{width:auto; padding:14px 16px 12px; gap:8px}
+  .guide h2{font-size:1.08rem}
+  .guide-body{font-size:.95rem; max-height:22vh; overflow-y:auto}
+}
+@media (prefers-reduced-motion: reduce){ .lamp,.dots button::before{transition:none} }
+</style>
+<style>
+/* Collapsible walkthrough card: tap or swipe the header to fold it away */
+button.guide-head{
+  appearance:none; -webkit-appearance:none; position:relative; width:100%; margin:0; padding:0; border:0; background:none;
+  color:inherit; font:inherit; text-align:left; cursor:pointer; touch-action:none; user-select:none; -webkit-user-select:none;
+  display:flex; align-items:center; gap:10px;
+}
+button.guide-head .count{margin-left:auto}
+.fold{display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border:1px solid var(--line); border-radius:6px;
+  font:500 10.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); background:var(--panel-solid)}
+.fold svg{width:10px; height:10px; transition:transform .2s ease}
+button.guide-head:hover .fold{border-color:color-mix(in srgb, var(--ink) 30%, transparent)}
+.guide.collapsed .fold svg{transform:rotate(180deg)}
+.grip{display:none}
+.guide-content{display:grid; gap:inherit; min-width:0}
+.guide.collapsed .guide-content{display:none}
+.guide.collapsed{width:auto; padding-top:12px; padding-bottom:12px}
+@media (max-width: 760px){
+  .grip{display:block; position:absolute; top:-8px; left:50%; width:38px; height:4px; margin-left:-19px; border-radius:2px; background:color-mix(in srgb, var(--ink) 25%, transparent)}
+  button.guide-head{padding-top:6px}
+  .guide{padding-top:16px}
+  .guide.collapsed{padding-top:16px; padding-bottom:12px}
+}
+@media (prefers-reduced-motion: reduce){ .fold svg{transition:none} }
+
+/* Back-to-menu link */
+.back{pointer-events:auto; justify-self:start; display:inline-flex; align-items:center; gap:6px; margin:-6px 0 0 -8px; padding:6px 8px; border-radius:6px;
+  font:500 11.5px/1 var(--f-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-decoration:none}
+.back:hover{background:var(--glass)}
+.back:focus-visible{outline:2px solid var(--air); outline-offset:2px}
+
+/* Mobile additions for the standalone site */
+html,body{height:100%; height:100dvh}
+body{overscroll-behavior:none; -webkit-tap-highlight-color:transparent}
+.app{height:100dvh}
+#stage{touch-action:none}
+.masthead{top:calc(22px + env(safe-area-inset-top)); left:calc(24px + env(safe-area-inset-left))}
+.hud{bottom:calc(20px + env(safe-area-inset-bottom)); left:calc(20px + env(safe-area-inset-left)); right:calc(20px + env(safe-area-inset-right))}
+@media (max-width: 760px){
+  .masthead{top:calc(12px + env(safe-area-inset-top)); left:calc(14px + env(safe-area-inset-left)); right:calc(14px + env(safe-area-inset-right))}
+  .hud{left:calc(10px + env(safe-area-inset-left)); right:calc(10px + env(safe-area-inset-right)); bottom:calc(10px + env(safe-area-inset-bottom))}
+  .dock{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px}
+  .dock .btn{justify-content:center; padding:0 6px; min-width:0; height:40px}
+  #btn-explode{grid-column:1 / 3}
+  #btn-reset{background:var(--panel); border-color:var(--line)}
+  .nav-btn{height:40px; padding:0 14px}
+  .dots button{width:14px; height:28px}
+  .tip{max-width:min(280px, calc(100vw - 24px))}
+}
+@media (max-width: 380px){
+  .readout{gap:4px 14px}
+  .plate{font-size:10px}
+  .btn{font-size:12.5px; gap:6px}
+  .guide{padding:12px 14px 10px; gap:6px}
+  .guide h2{font-size:1rem}
+  .guide-body{max-height:18vh}
+  .spec{font-size:.84rem; padding-top:8px}
+  .dots{gap:2px}
+  .dots button{width:10px}
+  .dots button::before{width:8px}
+  .nav-btn{padding:0 11px}
+}
+@media (max-height: 500px) and (orientation: landscape){
+  .readout,.plate{display:none}
+  .guide-body{max-height:30vh}
+}
+</style>
+<link rel="stylesheet" href="../assets/storybook.css">
+</head>
+<body>
+
+<div class="app" id="app">
+  <canvas id="stage" aria-label="Interactive 3D model of a lime-green electric car in a garage, with a wall charger and a cable to the car's charging door. Drag to orbit, scroll to zoom."></canvas>
+  <div class="labels" id="labels" aria-hidden="true"></div>
+
+  <header class="masthead" id="mast">
+    <a class="back" href="../">&larr; All machines</a>
+    <p class="plate">Electric hatchback · 60 kWh battery · 7 kW charger</p>
+    <h1>Inside an Electric Car</h1>
+    <p class="hint" id="hint">Drag to orbit, scroll to zoom, hover any part to see what it does.</p>
+    <dl class="readout" aria-live="off">
+      <div><dt>Battery</dt><dd><span class="meter" id="ro-meter"><i></i></span><span id="ro-bat">55%</span></dd></div>
+      <div><dt>Can drive</dt><dd id="ro-range">231 km</dd></div>
+      <div><dt>Car</dt><dd id="ro-state">Parked</dd></div>
+    </dl>
+  </header>
+
+  <div class="hud" id="hud">
+    <nav class="dock" id="dock" aria-label="Car controls">
+      <button class="btn" id="btn-plug" aria-pressed="false"><span class="lamp"></span>Charger</button>
+      <button class="btn" id="btn-drive" aria-pressed="false"><span class="lamp"></span>Drive</button>
+      <button class="btn" id="btn-xray" aria-pressed="false"><span class="lamp"></span>See inside</button>
+      <button class="btn primary" id="btn-explode" aria-pressed="false">Explode</button>
+      <button class="btn plain-btn" id="btn-reset">Reset view</button>
+    </nav>
+
+    <aside class="guide" id="guide" aria-labelledby="g-title">
+      <button type="button" class="guide-head" id="g-toggle" aria-expanded="true" aria-controls="g-content" title="Tap or swipe down to hide"><span class="grip" aria-hidden="true"></span><span class="eyebrow">How it works</span><span class="count" id="g-count">Overview</span><span class="fold"><span id="g-fold-txt">Hide</span><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 3.5 5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span></button>
+      <div class="guide-content" id="g-content">
+      <h2 id="g-title">Hello, car!</h2>
+      <p class="guide-body" id="g-body" aria-live="polite"></p>
+      <p class="spec"><span class="try">Try it</span><span id="g-spec"></span></p>
+      <div class="guide-nav">
+        <button class="nav-btn" id="g-prev" disabled>Back</button>
+        <ol class="dots" id="g-dots"></ol>
+        <button class="nav-btn next" id="g-next">Start</button>
+      </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="tip" id="tip" hidden><b id="tip-name"></b><span id="tip-desc"></span></div>
+
+  <div class="fail" id="fail" hidden>
+    <div><h2>The 3D view didn't load</h2><p>This page needs WebGL and the Three.js library. Check your connection, then reload the page.</p></div>
+  </div>
+</div>
+
+<script src="../assets/storybook.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+function fail(){ $('#fail').hidden = false; $('#hud').hidden = true; }
+if (!window.THREE || !THREE.OrbitControls || !THREE.RoomEnvironment) { fail(); return; }
+
+/* ---------------------------------------------------------------- helpers */
+const TAU = Math.PI * 2, V3 = THREE.Vector3, DS = THREE.DoubleSide;
+const SRGB = h => new THREE.Color(h).convertSRGBToLinear();   // storybook palette colours, given as normal hex
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const easeIO = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+const rand = (a, b) => a + Math.random() * (b - a);
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const coarse = matchMedia('(pointer: coarse)').matches;
+
+function mergeGeos(list){
+  let nv = 0, ni = 0;
+  for (const g of list){ nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+  let vo = 0, io = 0;
+  for (const g of list){
+    if (!g.attributes.normal) g.computeVertexNormals();
+    const n = g.attributes.position.count;
+    pos.set(g.attributes.position.array, vo * 3); nor.set(g.attributes.normal.array, vo * 3);
+    if (g.index){ const a = g.index.array; for (let i = 0; i < a.length; i++) idx[io++] = a[i] + vo; }
+    else for (let i = 0; i < n; i++) idx[io++] = vo + i;
+    vo += n; g.dispose();
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  out.setIndex(new THREE.BufferAttribute(idx, 1));
+  return out;
+}
+const v2 = pts => pts.map(([r, y]) => new THREE.Vector2(r, y));
+function latheY(profile, segs = 64, p0 = 0, pl = TAU){ return new THREE.LatheGeometry(v2(profile), segs, p0, pl); }
+function cylY(r, y0, y1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, y1 - y0, seg); g.translate(0, (y0 + y1) / 2, 0); return g; }
+function cylX(r, x0, x1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(x1 - x0), seg); g.rotateZ(Math.PI / 2); g.translate((x0 + x1) / 2, 0, 0); return g; }
+function rrShape(w, h, r){
+  r = Math.max(.0004, Math.min(r, w / 2, h / 2));
+  const s = new THREE.Shape(), x = -w / 2, y = -h / 2;
+  s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r);
+  s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r);
+  s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y);
+  return s;
+}
+function roundedBox(w, h, d, b){
+  const g = new THREE.ExtrudeGeometry(rrShape(w - 2 * b, h - 2 * b, b * .8), { depth: Math.max(.0002, d - 2 * b), bevelEnabled: true, bevelThickness: b, bevelSize: b, bevelSegments: 3, curveSegments: 6 });
+  g.translate(0, 0, -(d - 2 * b) / 2); return g;
+}
+// extrude a top-view shape (shape x = world x, shape y = -world z) upward from y0 by depth
+function slab(shape, y0, depth, bevel = 0){
+  const g = new THREE.ExtrudeGeometry(shape, { depth: Math.max(.0002, depth - 2 * bevel), bevelEnabled: bevel > 0, bevelThickness: bevel, bevelSize: bevel, bevelSegments: 2, curveSegments: 48 });
+  g.rotateX(-Math.PI / 2); g.translate(0, y0 + bevel, 0); return g;
+}
+function tube(points, radius, segs = 24, radial = 6){ return new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), segs, radius, radial, false); }
+function canvasTex(w, h, draw){ const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); draw(x, w, h); const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; t.userData = { canvas: c, ctx: x }; return t; }
+
+/* ---------------------------------------------------------------- renderer, scene, camera */
+const canvas = $('#stage');
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'high-performance' }); }
+catch (e) { fail(); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = .9;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+const camera = new THREE.PerspectiveCamera(32, 1, 0.02, 40);
+camera.position.set(.3, .5, 1.1);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = .08;
+controls.minDistance = .18; controls.maxDistance = 6;
+controls.maxPolarAngle = Math.PI / 2 - .02;
+controls.screenSpacePanning = true;
+
+scene.add(new THREE.HemisphereLight(0xfff1d6, 0x7a6a58, .42));
+const key = new THREE.DirectionalLight(0xfff0d8, 1.7);
+key.position.set(-1.3, 3.1, 1.7);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.6, bottom: -1.6, near: .5, far: 8 });
+key.shadow.bias = -.0004; key.shadow.normalBias = .01;
+key.target.position.set(0, 0, -.2);
+scene.add(key, key.target);
+const rimLight = new THREE.DirectionalLight(0xbcd6ff, .5);
+rimLight.position.set(2, 1.4, -2.2);
+scene.add(rimLight);
+
+const floorMat = new THREE.ShadowMaterial({ opacity: .24 });
+const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 64), floorMat);
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+scene.add(floor);
+
+/* ---------------------------------------------------------------- materials */
+const MAT = {
+  pink: () => new THREE.MeshPhysicalMaterial({ color: SRGB('#a8435f'), roughness: .5, clearcoat: .15, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  pinkLight: () => new THREE.MeshPhysicalMaterial({ color: SRGB('#d98aa0'), roughness: .48, clearcoat: .15, clearcoatRoughness: .25, envMapIntensity: .8, side: DS }),
+  trim: () => new THREE.MeshPhysicalMaterial({ color: SRGB('#6f2a4a'), roughness: .42, clearcoat: .25, side: DS }),
+  white: () => new THREE.MeshPhysicalMaterial({ color: SRGB('#efe4cc'), roughness: .5, clearcoat: .1, envMapIntensity: .8, side: DS }),
+  grey: () => new THREE.MeshStandardMaterial({ color: SRGB('#5e5a57'), roughness: .6, side: DS }),
+  dark: () => new THREE.MeshStandardMaterial({ color: SRGB('#2f2b2e'), roughness: .55, side: DS }),
+  glass: () => new THREE.MeshPhysicalMaterial({ color: 0x15171b, roughness: .08, clearcoat: 1, clearcoatRoughness: .05, side: DS }),
+  satin: () => new THREE.MeshStandardMaterial({ color: 0xc4c9cd, metalness: .9, roughness: .3, side: DS }),
+  rubber: () => new THREE.MeshStandardMaterial({ color: SRGB('#2f2b2e'), roughness: .82, side: DS }),
+  pcb: () => new THREE.MeshStandardMaterial({ color: SRGB('#3c7d4f'), roughness: .55, side: DS }),
+  cell: () => new THREE.MeshPhysicalMaterial({ color: SRGB('#3f86c4'), roughness: .35, clearcoat: .5, side: DS }),
+  bristle: () => new THREE.MeshStandardMaterial({ color: SRGB('#e6a2b4'), roughness: .7, side: DS }),
+  fabric: () => new THREE.MeshStandardMaterial({ color: 0xf8e3ee, roughness: 1, side: DS }),
+};
+
+/* ---------------------------------------------------------------- parts registry */
+const parts = {}, partList = [], shellMats = [];
+function makePart(id, name, desc, parent, row){
+  const g = new THREE.Group(); g.name = id; parent.add(g);
+  const p = { id, name, desc, row, group: g, meshes: [], mats: [], hl: 0, dist: 0, rank: 0, base: new V3(), anchor: new V3(), side: 'right', stem: 24, labelEl: null };
+  parts[id] = p; partList.push(p); return p;
+}
+function addMesh(p, geo, mat, o = {}){
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = o.shadow !== false; m.receiveShadow = o.receive !== false;
+  m.userData.part = p; m.userData.shell = !!o.shell;
+  (o.parent || p.group).add(m);
+  p.meshes.push(m);
+  if (!p.mats.includes(mat)){
+    p.mats.push(mat);
+    mat.userData.base = mat.color.clone();
+    mat.userData.op = mat.opacity;
+    if (o.shell){ mat.transparent = true; shellMats.push(mat); }
+  }
+  return m;
+}
+
+/* ---------------------------------------------------------------- scene tweaks: a garage corner on a tabletop slab, in metres */
+camera.near = .02; camera.far = 60; camera.updateProjectionMatrix();
+controls.minDistance = .4; controls.maxDistance = 30;
+controls.maxPolarAngle = Math.PI / 2 - .05;
+key.position.set(-4, 7, 6); key.target.position.set(0, 0, 0);
+Object.assign(key.shadow.camera, { left: -7, right: 7, top: 7, bottom: -7, near: .5, far: 20 });
+key.shadow.camera.updateProjectionMatrix();
+key.shadow.bias = -.0004; key.shadow.normalBias = .02;
+floor.position.y = -.4;
+const MANAGED = new Set();   // materials whose glow is driven by the story, not by highlights
+
+/* ---------------------------------------------------------------- helpers */
+function cylZ(r, z0, z1, seg = 24){ const g = new THREE.CylinderGeometry(r, r, Math.abs(z1 - z0), seg); g.rotateX(Math.PI / 2); g.translate(0, 0, (z0 + z1) / 2); return g; }
+function box(w, h, d, x, y, z){ return new THREE.BoxGeometry(w, h, d).translate(x, y, z); }
+const P = (x, y, z) => new V3(x, y, z);
+function poly(points){ const cp = new THREE.CurvePath(); for (let i = 1; i < points.length; i++) if (points[i].distanceTo(points[i - 1]) > 1e-6) cp.add(new THREE.LineCurve3(points[i - 1], points[i])); return cp; }
+const mat = (hex, rough = .6, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: SRGB(hex), roughness: rough, side: DS }, extra));
+// extrude a side-view shape (x = along the car, y = up) across the car's width, centred
+function sideExtrude(shape, width, bevel){ const g = new THREE.ExtrudeGeometry(shape, { depth: width - 2 * bevel, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * .8, bevelSegments: 5, curveSegments: 24 }); g.translate(0, 0, -(width - 2 * bevel) / 2); return g; }
+
+/* ================================================================ THE TABLETOP: garage floor, two walls, a driveway */
+const GX0 = -2.6, GX1 = 2.2, GZ0 = -3.0, GZ1 = 3.0, WALL_H = 2.6, WT = .12;
+const SX0 = -3.2, SX1 = 2.7, SZ0 = -3.4, SZ1 = 7.0, SD = .4;
+{
+  const W = 1536, H = 2048;
+  const gx = x => (x - SX0) / (SX1 - SX0) * W, gz = z => (z - SZ0) / (SZ1 - SZ0) * H;
+  const tex = canvasTex(W, H, x => {
+    x.fillStyle = '#7aa858'; x.fillRect(0, 0, W, H);
+    for (let i = 0; i < 700; i++){ x.fillStyle = i % 3 ? 'rgba(60,110,60,.10)' : 'rgba(170,200,110,.12)'; x.beginPath(); x.arc((i * 383) % W, (i * 727) % H, 8 + (i % 9) * 4, 0, TAU); x.fill(); }
+    // concrete garage floor with a few soft stains
+    x.fillStyle = '#d4cbbb'; x.fillRect(gx(GX0), gz(GZ0), gx(GX1) - gx(GX0), gz(GZ1) - gz(GZ0));
+    for (let i = 0; i < 40; i++){ x.fillStyle = 'rgba(120,105,85,.08)'; x.beginPath(); x.ellipse(gx(GX0) + (i * 197) % (gx(GX1) - gx(GX0)), gz(GZ0) + (i * 311) % (gz(GZ1) - gz(GZ0)), 30 + (i % 5) * 14, 18 + (i % 3) * 10, i, 0, TAU); x.fill(); }
+    x.strokeStyle = 'rgba(120,105,85,.35)'; x.lineWidth = 3;
+    for (const z of [-1, 1]){ x.beginPath(); x.moveTo(gx(GX0), gz(z)); x.lineTo(gx(GX1), gz(z)); x.stroke(); }
+    x.beginPath(); x.moveTo(gx(-.2), gz(GZ0)); x.lineTo(gx(-.2), gz(GZ1)); x.stroke();
+    // brick driveway
+    const bx0 = gx(-1.7), bz0 = gz(GZ1), bw = gx(1.3) - bx0, bh = H - bz0;
+    x.fillStyle = '#b5654a'; x.fillRect(bx0, bz0, bw, bh); x.strokeStyle = 'rgba(80,35,25,.35)'; x.lineWidth = 2;
+    for (let r = 0; r < bh; r += 16){ x.beginPath(); x.moveTo(bx0, bz0 + r); x.lineTo(bx0 + bw, bz0 + r); x.stroke(); for (let c = (r / 16) % 2 ? 16 : 0; c < bw; c += 32){ x.beginPath(); x.moveTo(bx0 + c, bz0 + r); x.lineTo(bx0 + c, bz0 + r + 16); x.stroke(); } }
+  });
+  tex.anisotropy = 8;
+  const top = new THREE.Mesh(new THREE.PlaneGeometry(SX1 - SX0, SZ1 - SZ0).rotateX(-Math.PI / 2).translate((SX0 + SX1) / 2, 0, (SZ0 + SZ1) / 2), new THREE.MeshStandardMaterial({ map: tex, roughness: .95 }));
+  top.receiveShadow = true; scene.add(top);
+  const soilTex = canvasTex(1024, 64, (x, w, h) => {
+    ['#6b4f36', '#7d5d3f', '#8c6a48', '#6e5238'].forEach((c, i) => { x.fillStyle = c; x.fillRect(0, i * h / 4, w, h / 4 + 1); });
+    for (let i = 0; i < 300; i++){ x.fillStyle = i % 2 ? 'rgba(40,25,15,.35)' : 'rgba(220,200,170,.25)'; x.beginPath(); x.arc((i * 211) % w, (i * 97) % h, 1 + (i % 3), 0, TAU); x.fill(); }
+    x.fillStyle = '#5f8f4a'; x.fillRect(0, 0, w, 5);
+  });
+  const soil = new THREE.MeshStandardMaterial({ map: soilTex, roughness: 1 });
+  const cx = (SX0 + SX1) / 2, cz = (SZ0 + SZ1) / 2, lx = SX1 - SX0, lz = SZ1 - SZ0;
+  for (const g of [box(lx, SD, .02, cx, -SD / 2, SZ1 - .01), box(lx, SD, .02, cx, -SD / 2, SZ0 + .01), box(.02, SD, lz, SX1 - .01, -SD / 2, cz), box(.02, SD, lz, SX0 + .01, -SD / 2, cz)]){
+    const s = new THREE.Mesh(g, soil); s.castShadow = true; s.receiveShadow = true; scene.add(s);
+  }
+}
+{
+  const p = makePart('garage', 'Garage', 'The car’s little house. It keeps the car dry, and the charger lives on the wall.', scene, 'prop');
+  const plaster = new THREE.MeshPhysicalMaterial({ color: SRGB('#efe4cc'), roughness: .85, side: DS });
+  addMesh(p, mergeGeos([box(GX1 + WT - GX0, WALL_H, WT, (GX0 + GX1 + WT) / 2, WALL_H / 2, GZ0 - WT / 2), box(WT, WALL_H, GZ1 - GZ0 + WT, GX1 + WT / 2, WALL_H / 2, (GZ0 + GZ1 - WT) / 2)]), plaster, { shell: true });
+  // a shelf with paint tins, a ball and a kid's bike
+  addMesh(p, mergeGeos([box(1.2, .04, .3, -1.6, 1.3, GZ0 + .15), box(.04, .2, .04, -2.1, 1.2, GZ0 + .05), box(.04, .2, .04, -1.1, 1.2, GZ0 + .05)]), mat('#8a6a48', .8));
+  addMesh(p, mergeGeos([cylY(.09, 1.32, 1.52, 16).translate(-1.95, 0, GZ0 + .15), cylY(.09, 1.32, 1.5, 16).translate(-1.7, 0, GZ0 + .15)]), mat('#5aa3d6', .5));
+  addMesh(p, cylY(.08, 1.32, 1.46, 16).translate(-1.4, 0, GZ0 + .15), mat('#e2a93b', .5));
+  addMesh(p, new THREE.SphereGeometry(.16, 24, 16).translate(-2.1, .16, 1.6), mat('#c8553d', .5));
+  const bike = [];
+  for (const x of [-2.25, -1.55]){ const t = new THREE.TorusGeometry(.24, .025, 8, 32); t.translate(x, .26, GZ0 + .35); bike.push(t); }
+  const bp = (a, b, r = .02) => { const d = new V3().subVectors(b, a), L = d.length(); const g = new THREE.CylinderGeometry(r, r, L, 6); g.translate(0, L / 2, 0); g.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new V3(0, 1, 0), d.normalize())); g.translate(a.x, a.y, a.z); return g; };
+  const z = GZ0 + .35;
+  bike.push(bp(P(-2.25, .26, z), P(-1.95, .3, z)), bp(P(-1.95, .3, z), P(-1.65, .6, z)), bp(P(-1.95, .3, z), P(-2.0, .62, z)), bp(P(-2.0, .62, z), P(-1.65, .6, z)), bp(P(-1.65, .6, z), P(-1.55, .26, z)), bp(P(-1.65, .6, z), P(-1.62, .78, z)), bp(P(-2.25, .26, z), P(-2.0, .62, z)));
+  bike.push(box(.16, .04, .06, -2.0, .65, z), box(.04, .04, .3, -1.62, .78, z));
+  addMesh(p, mergeGeos(bike), mat('#7b4f9e', .5));
+}
+
+/* ================================================================ DB BOARD, WALL CHARGER AND CABLE */
+const DBP = P(GX1 - .02, 1.45, -2.5);
+const CHG = P(GX1 - .07, 1.2, -1.0);
+let chargerRingMat;
+{
+  const p = makePart('db', 'DB board', 'The house’s DB board. A thick wire runs from here, inside the wall, to the wall charger.', scene, 'prop');
+  addMesh(p, roundedBox(.05, .4, .32, .01).translate(DBP.x, DBP.y, DBP.z), mat('#8d918f', .5));
+  addMesh(p, mergeGeos([0, 1, 2, 3].map(i => box(.03, .1, .045, DBP.x - .03, DBP.y, DBP.z - .1 + i * .065))), mat('#f2ead6', .5));
+}
+{
+  const p = makePart('charger', 'Wall charger', 'An extra-strong plug socket just for the car. It checks that everything is safe, then sends lots of electricity down the cable. Its ring glows while it charges.', scene, 'prop');
+  addMesh(p, roundedBox(.12, .46, .32, .04).translate(CHG.x, CHG.y, CHG.z), mat('#f2ead6', .5));
+  addMesh(p, roundedBox(.02, .3, .22, .02).translate(CHG.x - .065, CHG.y + .03, CHG.z), mat('#2f2b2e', .4));
+  chargerRingMat = new THREE.MeshStandardMaterial({ color: 0x3a4148, emissive: 0x000000, roughness: .3 }); MANAGED.add(chargerRingMat);
+  addMesh(p, new THREE.TorusGeometry(.06, .012, 10, 40).rotateY(Math.PI / 2).translate(CHG.x - .077, CHG.y + .06, CHG.z), chargerRingMat);
+  // holster for the plug, lower down
+  addMesh(p, roundedBox(.1, .1, .12, .02).translate(CHG.x - .02, .9, CHG.z + .2), mat('#2f2b2e', .5));
+}
+{
+  const p = makePart('wallWire', 'Wire in the wall', 'A thick wire hidden in the wall, carrying electricity from the DB board to the charger.', scene, 'prop');
+  addMesh(p, tube([P(GX1 + .06, DBP.y, DBP.z), P(GX1 + .06, 1.9, DBP.z + .3), P(GX1 + .06, 1.9, CHG.z - .4), P(GX1 + .06, CHG.y + .1, CHG.z)], .025, 40, 6), mat('#c8553d', .5), { shell: true });
+}
+// the charging cable: fixed near the charger, its end moves between the holster and the car's charge port
+const CABLE_FIXED = [P(CHG.x - .02, CHG.y - .24, CHG.z - .08), P(CHG.x - .1, .7, CHG.z - .15), P(CHG.x - .3, .05, CHG.z - .25), P(1.4, .04, -1.3)];
+const CABLE_IN = [P(1.02, .05, -1.55), P(.82, .5, -1.6), P(.7, .86, -1.6)];
+const CABLE_OUT = [P(1.75, .12, -1.0), P(CHG.x - .25, .55, CHG.z + .2), P(CHG.x - .14, .9, CHG.z + .2)];
+let cableMesh, cableCurve, cablePlug, cableK = -1;
+{
+  const p = makePart('cable', 'Charging cable', 'A thick, bendy cable that carries electricity from the wall charger into the car.', scene, 'prop');
+  cableMesh = addMesh(p, new THREE.BufferGeometry(), mat('#2f2b2e', .5));
+  cablePlug = new THREE.Group(); p.group.add(cablePlug);
+  addMesh(p, roundedBox(.09, .09, .2, .03).translate(0, 0, -.1), mat('#2f2b2e', .5), { parent: cablePlug });
+  addMesh(p, cylZ(.04, 0, .05, 16), mat('#e2a93b', .5), { parent: cablePlug });
+}
+function setCable(k){
+  if (Math.abs(k - cableK) < 1e-4) return; cableK = k;
+  const e = easeIO(k), ends = CABLE_IN.map((a, i) => CABLE_OUT[i].clone().lerp(a, e));
+  cableCurve = new THREE.CatmullRomCurve3(CABLE_FIXED.concat(ends));
+  cableMesh.geometry.dispose(); cableMesh.geometry = new THREE.TubeGeometry(cableCurve, 80, .022, 8, false);
+  const end = cableCurve.getPoint(1), tan = cableCurve.getTangent(1);
+  cablePlug.position.copy(end); cablePlug.lookAt(cablePlug.position.clone().add(tan));
+}
+
+/* ================================================================ THE CAR: a lime-green electric hatchback */
+// built along local x (front = +x), then turned so its nose points out of the garage door (+z)
+const CAR_X = -.3;
+const carRoot = new THREE.Group(); carRoot.position.set(CAR_X, 0, 0); carRoot.rotation.y = -Math.PI / 2; scene.add(carRoot);
+const WHEEL_R = .33, WB = 1.35, TRACK = .78;
+const PORT = P(-1.6, .86, -.87);   // charge port, on the car's left side (it faces the charger wall)
+const lime = new THREE.MeshPhysicalMaterial({ color: SRGB('#9fc23a'), roughness: .35, clearcoat: .45, clearcoatRoughness: .2, side: DS });
+let headMat, tailMat, portFlap;
+{
+  const p = makePart('body', 'Car body', 'The car’s lime-green coat. It’s smooth and round, so the air slips past easily and the battery lasts longer.', carRoot, 'car');
+  const s = new THREE.Shape();
+  s.moveTo(-2.0, .32); s.lineTo(-WB - .4, .32); s.absarc(-WB, .32, .4, Math.PI, 0, true);
+  s.lineTo(WB - .4, .32); s.absarc(WB, .32, .4, Math.PI, 0, true);
+  s.lineTo(2.0, .34); s.quadraticCurveTo(2.14, .4, 2.1, .55); s.quadraticCurveTo(2.08, .7, 1.9, .76);
+  s.lineTo(1.1, .95); s.lineTo(-1.8, 1.0); s.quadraticCurveTo(-2.08, .98, -2.1, .8); s.lineTo(-2.12, .45); s.quadraticCurveTo(-2.1, .32, -2.0, .32);
+  addMesh(p, sideExtrude(s, 1.76, .1), lime, { shell: true });
+  // a little crease along the side, like a wave
+  addMesh(p, mergeGeos([-1, 1].map(sd => tube([P(1.7, .7, sd * .885), P(.6, .78, sd * .89), P(-.6, .72, sd * .89), P(-1.7, .86, sd * .87)], .012, 30, 5))), mat('#7f9f2a', .5), { shell: true });
+  headMat = new THREE.MeshStandardMaterial({ color: 0xf7efdc, emissive: 0x000000, roughness: .2 }); MANAGED.add(headMat);
+  addMesh(p, mergeGeos([-1, 1].map(sd => roundedBox(.1, .06, .34, .025).rotateY(sd * .35).translate(1.98, .73, sd * .58))), headMat);
+  tailMat = new THREE.MeshStandardMaterial({ color: SRGB('#a8343a'), emissive: 0x000000, roughness: .3 }); MANAGED.add(tailMat);
+  addMesh(p, roundedBox(.05, .06, 1.5, .02).translate(-2.1, .86, 0), tailMat);
+  addMesh(p, mergeGeos([-1, 1].map(sd => roundedBox(.16, .07, .1, .03).translate(.95, 1.02, sd * .93))), lime);
+  addMesh(p, mergeGeos([roundedBox(.3, .05, 1.5, .02).translate(2.08, .4, 0), roundedBox(.2, .05, 1.5, .02).translate(-2.1, .4, 0)]), mat('#2f2b2e', .6));
+  // seats and a steering wheel, seen through the glass
+  const seats = [];
+  for (const sd of [-1, 1]) seats.push(roundedBox(.45, .12, .45, .05).translate(.0, .62, sd * .35), roundedBox(.12, .55, .45, .05).rotateZ(.2).translate(-.25, .92, sd * .35));
+  seats.push(roundedBox(.45, .12, 1.2, .05).translate(-1.05, .62, 0), roundedBox(.12, .5, 1.2, .05).rotateZ(.2).translate(-1.3, .9, 0));
+  addMesh(p, mergeGeos(seats), mat('#3a3f3f', .8));
+  addMesh(p, new THREE.TorusGeometry(.16, .02, 8, 24).rotateY(Math.PI / 2).rotateZ(.4).translate(.45, 1.0, -.35), mat('#2f2b2e', .5));
+  // the charge port flap
+  portFlap = new THREE.Group(); portFlap.position.set(PORT.x + .08, PORT.y, PORT.z - .01); p.group.add(portFlap);
+  addMesh(p, roundedBox(.16, .14, .02, .01).translate(-.08, 0, 0), lime, { parent: portFlap });
+  addMesh(p, cylZ(.045, PORT.z - .005, PORT.z + .01, 16).translate(PORT.x, PORT.y, 0), mat('#2f2b2e', .4));
+}
+{
+  const p = makePart('cabin', 'Windows and roof', 'The windows let the driver see out, and the dark roof keeps the sun off.', carRoot, 'car');
+  const c = new THREE.Shape();
+  c.moveTo(1.12, .94); c.lineTo(.25, 1.5); c.quadraticCurveTo(.0, 1.57, -.4, 1.57); c.lineTo(-1.45, 1.53); c.quadraticCurveTo(-1.82, 1.48, -1.96, 1.18); c.lineTo(-1.84, .96); c.closePath();
+  addMesh(p, sideExtrude(c, 1.42, .06), new THREE.MeshPhysicalMaterial({ color: SRGB('#2d3b44'), roughness: .1, clearcoat: 1, transparent: true, opacity: .86, side: DS }), { shell: true });
+  const r = new THREE.Shape(); r.moveTo(.22, 1.5); r.quadraticCurveTo(.0, 1.6, -.4, 1.6); r.lineTo(-1.45, 1.56); r.lineTo(-1.5, 1.52); r.lineTo(.18, 1.48); r.closePath();
+  addMesh(p, sideExtrude(r, 1.44, .04), mat('#3a3f3f', .5), { shell: true });
+  addMesh(p, mergeGeos([-1, 1].map(sd => box(.08, .56, .03, -.42, 1.24, sd * .7))), mat('#3a3f3f', .5), { shell: true });
+}
+// wheels
+const wheels = [];
+{
+  const p = makePart('wheels', 'Wheels', 'Four wheels with grippy rubber tyres. The motor turns the front two.', carRoot, 'car');
+  for (const wx of [-WB, WB]) for (const sd of [-1, 1]){
+    const g = new THREE.Group(); g.position.set(wx, WHEEL_R, sd * TRACK); p.group.add(g); wheels.push(g);
+    addMesh(p, cylZ(WHEEL_R, -.1, .1, 32), mat('#26292c', .85), { parent: g });
+    const rim = [cylZ(.2, sd * .09, sd * .105, 32)];
+    for (let k = 0; k < 5; k++) rim.push(box(.36, .05, .02, 0, 0, sd * .1).rotateZ(k / 5 * TAU));
+    addMesh(p, mergeGeos(rim), mat('#c9cccb', .35, { metalness: .6 }), { parent: g });
+  }
+}
+// the big battery under the floor: a tray of long flat cells that light up as it fills
+const CELLS = 16, cellMats = [];
+{
+  const p = makePart('battery', 'The big battery', 'The car’s giant battery, under the floor. It’s made of lots of long, flat cells lined up like books on a shelf. They’re called blade cells.', carRoot, 'car');
+  addMesh(p, mergeGeos([box(2.4, .03, 1.4, 0, .19, 0), box(2.4, .12, .03, 0, .25, .7), box(2.4, .12, .03, 0, .25, -.7), box(.03, .12, 1.4, 1.2, .25, 0), box(.03, .12, 1.4, -1.2, .25, 0)]), mat('#4a4f52', .6));
+  for (let i = 0; i < CELLS; i++){
+    const m = new THREE.MeshStandardMaterial({ color: SRGB('#3e4447'), emissive: 0x000000, roughness: .4 }); MANAGED.add(m); cellMats.push(m);
+    addMesh(p, roundedBox(.1, .1, 1.3, .015).translate(-1.12 + i * (2.24 / (CELLS - 1)), .26, 0), m);
+  }
+}
+{
+  const p = makePart('motor', 'Motor and inverter', 'The motor turns the front wheels. The box on top changes the battery’s electricity into the kind the motor needs, and tells it how fast to spin.', carRoot, 'car');
+  addMesh(p, cylZ(.15, -.25, .25, 28).translate(WB, .4, 0), mat('#b9bcbc', .35, { metalness: .6 }));
+  addMesh(p, roundedBox(.3, .3, .2, .04).translate(WB + .05, .4, .3), mat('#7d8a86', .5));
+  addMesh(p, roundedBox(.4, .18, .55, .04).translate(WB + .15, .68, 0), mat('#5a6763', .5));
+  addMesh(p, cylZ(.03, -TRACK + .1, TRACK - .1, 12).translate(WB, WHEEL_R, 0), MAT.dark());
+}
+{
+  const p = makePart('onboard', 'Charger in the car', 'A box inside the car that takes electricity from the cable and fills the battery carefully, so it never gets too full or too hot.', carRoot, 'car');
+  addMesh(p, roundedBox(.34, .16, .36, .04).translate(-1.45, .5, -.4), mat('#5a6763', .5));
+}
+// the orange high-voltage wires inside the car
+const HV_CHARGE = [P(PORT.x, PORT.y, PORT.z + .03), P(PORT.x + .05, .7, -.62), P(-1.45, .6, -.45), P(-1.32, .4, -.3), P(-1.1, .3, -.2)];
+const HV_DRIVE = [P(1.1, .3, .15), P(1.25, .5, .2), P(WB + .1, .66, .15), P(WB + .15, .6, .0), P(WB + .05, .5, .25)];
+{
+  const p = makePart('hvWires', 'Orange wires', 'These wires carry lots of electricity inside the car. They’re bright orange so mechanics know to be extra careful.', carRoot, 'car');
+  addMesh(p, mergeGeos([tube(HV_CHARGE, .022, 40, 6), tube(HV_DRIVE, .022, 40, 6)]), mat('#e07b2c', .5));
+}
+
+/* ---------------------------------------------------------------- explode layout: the car comes apart upwards */
+scene.updateMatrixWorld(true);
+const EXPLODE = { battery: 0, hvWires: .45, motor: .75, onboard: .75, body: 1.4, cabin: 2.05, wheels: 0 };
+const SIDES = { battery: ['right', 40], hvWires: ['left', 40], motor: ['right', 30], onboard: ['left', 30], body: ['right', 40], cabin: ['left', 40], wheels: ['left', 70] };
+for (const id of Object.keys(EXPLODE)){
+  const p = parts[id], b = new THREE.Box3().setFromObject(p.group), c = b.getCenter(new V3());
+  p.off = new V3(0, EXPLODE[id], 0); p.rank = EXPLODE[id] / 2.05;
+  [p.side, p.stem] = SIDES[id];
+  p.anchor.copy(p.group.worldToLocal(new V3(p.side === 'right' ? b.max.x : b.min.x, c.y, c.z)));
+}
+for (const p of partList){ p.base.copy(p.group.position); if (!p.off) p.off = new V3(); }
+
+/* ---------------------------------------------------------------- point flows */
+const pointVS = `attribute float aAlpha; attribute float aSize; varying float vA; uniform float uScale;
+  void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * mv; gl_PointSize = max(1.0, aSize * uScale / -mv.z); }`;
+const pointFS = `uniform vec3 uColor; uniform float uCore; varying float vA;
+  void main(){ float d = length(gl_PointCoord - 0.5) * 2.0; float a = (1.0 - smoothstep(0.3, 1.0, d)) * vA; if (a < 0.01) discard;
+  vec3 c = mix(uColor, vec3(1.0), uCore * (1.0 - smoothstep(0.0, 0.5, d))); gl_FragColor = vec4(c, a); }`;
+const pointMats = [];
+function makeFlow(parent, getPaths, n, size, speed, token){
+  const mat = new THREE.ShaderMaterial({ uniforms: { uColor: { value: new THREE.Color() }, uScale: { value: 600 }, uCore: { value: .45 } }, vertexShader: pointVS, fragmentShader: pointFS, transparent: true, depthWrite: false, depthTest: false });
+  mat.userData.token = token; pointMats.push(mat);
+  const pos = new Float32Array(n * 3), alpha = new Float32Array(n), sz = new Float32Array(n);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1)); g.setAttribute('aSize', new THREE.BufferAttribute(sz, 1));
+  const pts = new THREE.Points(g, mat); pts.frustumCulled = false; pts.renderOrder = 10; parent.add(pts);
+  const u = new Float32Array(n); for (let i = 0; i < n; i++) u[i] = Math.random();
+  const q = new V3();
+  return { vis: 0, update(dt, on){
+    this.vis += ((on ? 1 : 0) - this.vis) * Math.min(1, dt * 4);
+    pts.visible = this.vis > .01; if (!pts.visible) return;
+    const paths = getPaths();
+    for (let i = 0; i < n; i++){
+      const path = paths[i % paths.length];
+      u[i] += dt * speed / path.getLength(); if (u[i] > 1) u[i] -= 1;
+      path.getPointAt(u[i], q);
+      pos[i * 3] = q.x; pos[i * 3 + 1] = q.y; pos[i * 3 + 2] = q.z;
+      alpha[i] = this.vis * .95 * smooth(0, .04, u[i]) * (1 - smooth(.96, 1, u[i])); sz[i] = size;
+    }
+    g.attributes.position.needsUpdate = true; g.attributes.aAlpha.needsUpdate = true; g.attributes.aSize.needsUpdate = true;
+  } };
+}
+const wallPath = poly([P(GX1 + .06, DBP.y, DBP.z), P(GX1 + .06, 1.9, DBP.z + .3), P(GX1 + .06, 1.9, CHG.z - .4), P(GX1 + .06, CHG.y + .1, CHG.z), P(CHG.x, CHG.y - .2, CHG.z - .08)]);
+const chargeIn = poly(HV_CHARGE), drivePath = poly(HV_DRIVE), regenPath = poly(HV_DRIVE.slice().reverse());
+const wallFlow = makeFlow(scene, () => [wallPath], 16, .05, .5, '--teal');
+const cableFlow = makeFlow(scene, () => [cableCurve], 26, .05, .55, '--teal');
+const carChargeFlow = makeFlow(carRoot, () => [chargeIn], 14, .045, .35, '--teal');
+const driveFlow = makeFlow(carRoot, () => [drivePath], 14, .05, .9, '--volt');
+const regenFlow = makeFlow(carRoot, () => [regenPath], 10, .045, .6, '--teal');
+
+/* ---------------------------------------------------------------- state */
+const S = { explode: false, ep: 0, xray: false, xr: 0, step: 0, hovered: null, stepHL: new Set(),
+  charge: .55, plugged: false, plugK: 0, drive: false, leg: 'home', legT: 0, carZ: 0, wantPlug: false, phase: '' };
+const FILL = 1 / 30, OUT_Z = 3.6, LEG_TIME = 4.5;
+const atHome = () => S.leg === 'home' && S.carZ < .005;
+
+/* ---------------------------------------------------------------- theme tokens -> 3D colours */
+const HL = new THREE.Color(0xffb02e);
+let tealCol = new THREE.Color('#1a9e8f'), voltCol = new THREE.Color('#c4780f');
+const limeGlow = new THREE.Color('#8fd12a'), warm = new THREE.Color(0xfff1c9);
+function readTheme(){
+  const cs = getComputedStyle(document.documentElement);
+  for (const m of pointMats) m.uniforms.uColor.value.set(cs.getPropertyValue(m.userData.token).trim() || '#1f73b2');
+  tealCol = new THREE.Color(cs.getPropertyValue('--teal').trim() || '#1a9e8f');
+  voltCol = new THREE.Color(cs.getPropertyValue('--volt').trim() || '#c4780f');
+  floorMat.opacity = parseFloat(cs.getPropertyValue('--shadow')) || .24;
+}
+readTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
+
+/* ---------------------------------------------------------------- explode labels */
+const labelLayer = $('#labels');
+for (const p of partList){
+  if (p.row !== 'car') continue;
+  const el = document.createElement('div');
+  el.className = 'lbl ' + p.side;
+  el.style.setProperty('--stem', p.stem + 'px');
+  el.innerHTML = '<span class="lbl-pin"></span><span class="lbl-stem"></span><span class="lbl-name"></span>';
+  el.querySelector('.lbl-name').textContent = p.name;
+  labelLayer.appendChild(el); p.labelEl = el;
+}
+const projV = new V3();
+let W = 1, Hh = 1;
+function updateLabels(){
+  const vis = smooth(.72, 1, S.ep);
+  for (const p of partList){
+    const el = p.labelEl; if (!el) continue;
+    if (vis < .01){ if (el.style.visibility !== 'hidden') el.style.visibility = 'hidden'; continue; }
+    projV.copy(p.anchor); p.group.localToWorld(projV); projV.project(camera);
+    if (projV.z > 1){ el.style.visibility = 'hidden'; continue; }
+    const x = (projV.x * .5 + .5) * W, y = (-projV.y * .5 + .5) * Hh;
+    el.style.visibility = 'visible'; el.style.opacity = vis.toFixed(3);
+    el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(${p.side === 'right' ? '-3px' : 'calc(-100% + 3px)'}, -50%)`;
+    el.classList.toggle('hot', S.hovered === p);
+  }
+}
+
+/* ---------------------------------------------------------------- camera framing */
+const mast = $('#mast'), hud = $('#hud'), guide = $('#guide'), dock = $('#dock');
+let insets = { left: 0, right: 0, top: 0, bottom: 0 };
+function computeInsets(){
+  const app = $('#app').getBoundingClientRect(), narrow = app.width <= 760;
+  const m = mast.getBoundingClientRect(), h = hud.getBoundingClientRect(), g = guide.getBoundingClientRect(), d = dock.getBoundingClientRect();
+  if (narrow) insets = { left: 0, right: 0, top: m.bottom - app.top + 4, bottom: app.bottom - h.top + 6 };
+  else insets = { left: 0, right: guide.classList.contains('collapsed') ? 0 : app.right - g.left + 8, top: (m.bottom - app.top) * .55, bottom: (app.bottom - d.top) * .7 };
+}
+function resize(){
+  const r = $('#app').getBoundingClientRect();
+  W = Math.max(1, r.width); Hh = Math.max(1, r.height);
+  renderer.setSize(W, Hh, false);
+  camera.aspect = W / Hh;
+  computeInsets();
+  camera.setViewOffset(W, Hh, (insets.right - insets.left) / 2, (insets.bottom - insets.top) / 2, W, Hh);
+  camera.updateProjectionMatrix();
+  const scale = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+  for (const m of pointMats) m.uniforms.uScale.value = scale;
+}
+const VIEWS = {
+  overview: { t: [-.1, 1.0, .6], d: [-.6, .5, 1], w: 6.2, h: 4.2 },
+  charger: { t: [1.7, 1.15, -1.7], d: [-1, .55, .45], w: 2.4, h: 2.0 },
+  port: { t: [1.2, .75, -1.3], d: [.16, .55, 1], w: 2.6, h: 1.7 },
+  battery: { t: [-.3, .35, 0], d: [-.55, 1.0, .75], w: 4.6, h: 2.4 },
+  inside: { t: [-.3, .6, 0], d: [-.9, .55, .45], w: 4.8, h: 2.3 },
+  drive: { t: [-.2, .7, 2.2], d: [-.85, .45, .75], w: 7.6, h: 3.2 }
+};
+function explodeView(){ return { t: [-.3, 1.4, 0], d: [-.85, .35, .7], w: 5.2, h: 3.6 }; }
+function viewPose(v){
+  const fov = camera.fov * Math.PI / 180, tn = 2 * Math.tan(fov / 2);
+  const fw = Math.max(120, W - insets.left - insets.right), fh = Math.max(120, Hh - insets.top - insets.bottom);
+  const dist = Math.max(v.h * Hh / (fh * tn), v.w * Hh / (fw * tn)) * 1.08;
+  const t = new V3(...v.t), dir = new V3(...v.d).normalize();
+  return { t, p: t.clone().addScaledVector(dir, dist) };
+}
+let tween = null;
+function flyTo(v, dur = 1.3){
+  const to = viewPose(v);
+  if (reduceMotion){ camera.position.copy(to.p); controls.target.copy(to.t); controls.update(); tween = null; return; }
+  tween = { p0: camera.position.clone(), t0: controls.target.clone(), to, t: 0, dur };
+}
+let dragging = false;
+controls.addEventListener('start', () => { tween = null; dragging = true; hideTip(); });
+controls.addEventListener('end', () => { dragging = false; });
+
+/* ---------------------------------------------------------------- walkthrough */
+const STEPS = [
+  { title: 'Hello, car!', view: 'overview', plug: false, drive: false, hl: [],
+    body: 'This is an electric car, parked in its garage. It doesn’t need petrol at all. Instead, it has a giant battery under the floor, and it fills up from a charger on the garage wall. Let’s find out how it works! Press Next to start.',
+    spec: 'Look at the battery number at the top. Press Charger to plug the car in.' },
+  { title: 'Electricity comes in', view: 'charger', plug: false, drive: false, hl: ['db', 'charger', 'wallWire'],
+    body: 'Electricity comes into the garage from the DB board, the same way it reaches every light and plug in the house. A thick wire runs inside the wall to the wall charger. The charger is like a giant, extra-strong plug socket just for the car.',
+    spec: 'Find the DB board and the wall charger on the wall.' },
+  { title: 'Plug it in', view: 'port', plug: true, drive: false, maxCharge: .6, hl: ['cable', 'charger'],
+    body: 'A grown-up opens a little door on the side of the car and pushes the charging plug in. First the charger and the car talk to each other to check that everything is safe. Then the electricity starts to flow, and the ring on the charger glows.',
+    spec: 'Watch the dots flow from the wall, down the cable and into the car. Only grown-ups plug in the car.' },
+  { title: 'The giant battery', view: 'battery', xray: true, plug: true, drive: false, maxCharge: .6, hl: ['battery'],
+    body: 'Under the floor is the car’s giant battery. It’s made of lots of long, flat cells lined up like books on a shelf. They’re called blade cells, because they’re long and thin. Watch them light up one by one as the battery fills.',
+    spec: 'Count the cells that are lit up. When all 16 glow, the battery is full.' },
+  { title: 'Orange wires', view: 'inside', xray: true, plug: true, drive: false, hl: ['hvWires', 'onboard', 'motor'],
+    body: 'Inside the car, bright orange wires carry lots of electricity: from the charging door to the battery, and from the battery to the motor at the front. They’re orange so mechanics know to be extra careful.',
+    spec: 'Press Explode to take the car apart and see every piece.' },
+  { title: 'Off we go!', view: 'drive', plug: false, drive: true, minCharge: .5, hl: ['motor', 'wheels'],
+    body: 'Time for a drive! The battery sends electricity to the motor at the front. The motor spins and turns the front wheels, and the car glides out of the garage with hardly a sound.',
+    spec: 'Watch the yellow dots go from the battery to the motor while the car speeds up.' },
+  { title: 'Slowing down', view: 'drive', plug: false, drive: true, minCharge: .5, hl: ['motor', 'battery'],
+    body: 'When the car slows down, the motor works backwards, like the little dynamo light on a bicycle. It turns some of the moving back into electricity and puts it back into the battery. Clever!',
+    spec: 'Watch for the teal dots going back into the battery each time the car slows down.' },
+  { title: 'Home to charge', view: 'overview', plug: true, drive: false, hl: ['charger', 'cable'],
+    body: 'After a drive, the battery is lower. Back in the garage, we plug it in again, and by the morning it’s full and ready for the next adventure. When the battery is full, the charger’s ring stops pulsing.',
+    spec: 'Press Drive to go out again, or wait for the battery to fill up.' }
+];
+const gTitle = $('#g-title'), gBody = $('#g-body'), gSpec = $('#g-spec'), gCount = $('#g-count'), gPrev = $('#g-prev'), gNext = $('#g-next'), gDots = $('#g-dots');
+for (let i = 1; i < STEPS.length; i++){
+  const li = document.createElement('li'), b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('aria-label', `Step ${i}: ${STEPS[i].title}`); b.addEventListener('click', () => goStep(i));
+  li.appendChild(b); gDots.appendChild(li);
+}
+function goStep(i){
+  const s = STEPS[i]; S.step = i;
+  gTitle.textContent = s.title; gBody.textContent = s.body; gSpec.textContent = s.spec;
+  gCount.textContent = i === 0 ? 'Overview' : `Step ${i} of ${STEPS.length - 1}`;
+  gPrev.disabled = i === 0;
+  gNext.textContent = i === 0 ? 'Start' : (i === STEPS.length - 1 ? 'Finish' : 'Next');
+  [...gDots.querySelectorAll('button')].forEach((b, k) => { const n = k + 1; b.classList.toggle('done', n < i); if (n === i) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); });
+  if (S.explode) setExplode(false, false);
+  if (s.minCharge !== undefined) S.charge = Math.max(S.charge, s.minCharge);
+  if (s.maxCharge !== undefined) S.charge = Math.min(S.charge, s.maxCharge);
+  setDrive(!!s.drive); setPlug(!!s.plug);
+  setXray(!!s.xray);
+  S.stepHL = new Set(s.hl);
+  flyTo(VIEWS[s.view]);
+}
+gPrev.addEventListener('click', () => goStep(Math.max(0, S.step - 1)));
+gNext.addEventListener('click', () => goStep(S.step >= STEPS.length - 1 ? 0 : S.step + 1));
+
+/* ---------------------------------------------------------------- controls */
+const btnPlug = $('#btn-plug'), btnDrive = $('#btn-drive'), btnX = $('#btn-xray'), btnE = $('#btn-explode');
+// the car can only be plugged in at home, and has to be unplugged before it drives
+function setPlug(on){
+  if (on && !atHome()){ S.drive = false; S.wantPlug = true; }
+  else { S.plugged = on; S.wantPlug = false; if (on) S.drive = false; }
+  btnPlug.setAttribute('aria-pressed', String(on)); btnDrive.setAttribute('aria-pressed', String(S.drive));
+}
+function setDrive(on){
+  S.drive = on; if (on){ S.plugged = false; S.wantPlug = false; btnPlug.setAttribute('aria-pressed', 'false'); }
+  btnDrive.setAttribute('aria-pressed', String(on));
+}
+function setXray(on){ S.xray = on; btnX.setAttribute('aria-pressed', String(on)); }
+function setExplode(on, fly = true){
+  S.explode = on; btnE.setAttribute('aria-pressed', String(on)); btnE.textContent = on ? 'Put back' : 'Explode';
+  if (on){ if (fly) flyTo(explodeView(), 1.3); }
+  else if (fly) flyTo(VIEWS[STEPS[S.step].view], .8);
+}
+btnPlug.addEventListener('click', () => { if (S.explode) setExplode(false); setPlug(!(S.plugged || S.wantPlug)); });
+btnDrive.addEventListener('click', () => { if (S.explode) setExplode(false); setDrive(!S.drive); });
+btnX.addEventListener('click', () => setXray(!S.xray));
+btnE.addEventListener('click', () => setExplode(!S.explode));
+$('#btn-reset').addEventListener('click', () => flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view]));
+window.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea')) return;
+  if (e.key === 'ArrowRight' && S.step < STEPS.length - 1) goStep(S.step + 1);
+  else if (e.key === 'ArrowLeft' && S.step > 0) goStep(S.step - 1);
+});
+if (coarse) $('#hint').textContent = 'Drag to look around, pinch to zoom, tap any part to see what it does.';
+
+/* ---------------------------------------------------------------- hover / tap picking */
+const raycaster = new THREE.Raycaster(), ndc = new THREE.Vector2();
+const pickables = partList.flatMap(p => p.meshes);
+const tip = $('#tip'), tipName = $('#tip-name'), tipDesc = $('#tip-desc');
+let pointer = null, needPick = false, downAt = null;
+function pick(cx, cy){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hits = raycaster.intersectObjects(pickables, false);
+  const xr = S.xr > .5 && S.ep < .05;
+  let shell = null;
+  for (const h of hits){ const u = h.object.userData; if (u.shell && xr){ if (!shell) shell = u.part; continue; } return u.part; }
+  return shell;
+}
+function showTip(p, cx, cy){
+  if (!p){ hideTip(); return; }
+  tipName.textContent = p.name; tipDesc.textContent = p.desc; tip.hidden = false;
+  const r = $('#app').getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight;
+  let x = cx - r.left + 16, y = cy - r.top + 18;
+  if (x + tw > r.width - 12) x = cx - r.left - tw - 14;
+  if (y + th > r.height - 12) y = cy - r.top - th - 14;
+  tip.style.transform = `translate(${Math.max(12, x)}px, ${Math.max(12, y)}px)`;
+}
+function hideTip(){ tip.hidden = true; S.hovered = null; canvas.classList.remove('pick'); }
+canvas.addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; pointer = { x: e.clientX, y: e.clientY }; needPick = true; });
+canvas.addEventListener('pointerleave', () => { pointer = null; hideTip(); });
+canvas.addEventListener('pointerdown', e => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+canvas.addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !downAt) return;
+  if (Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) < 8 && performance.now() - downAt.t < 450){ const p = pick(e.clientX, e.clientY); S.hovered = p; showTip(p, e.clientX, e.clientY); }
+});
+
+/* ---------------------------------------------------------------- readout */
+const roBat = $('#ro-bat'), roMeter = $('#ro-meter'), roRange = $('#ro-range'), roState = $('#ro-state');
+let roT = 0;
+const charging = () => S.plugK > .98 && S.charge < 1;
+function updateReadout(){
+  const b = Math.round(S.charge * 100);
+  roBat.textContent = b + '%'; roMeter.firstElementChild.style.width = `calc(${b}% - 2px)`; roMeter.classList.toggle('low', b < 25);
+  roRange.textContent = Math.round(S.charge * 420) + ' km';
+  roState.textContent = S.explode ? 'Taken apart'
+    : charging() ? 'Charging'
+    : S.plugK > .98 ? 'Full and plugged in'
+    : S.phase === 'speed' ? 'Speeding up' : S.phase === 'slow' ? 'Slowing down' : S.phase === 'back' ? 'Reversing home'
+    : S.leg !== 'home' ? 'Out for a drive' : S.wantPlug ? 'Coming home to charge' : 'Parked';
+}
+
+/* ---------------------------------------------------------------- frame update */
+function applyHighlight(p, k){
+  for (const m of p.mats){ if (MANAGED.has(m)) continue; m.color.copy(m.userData.base).lerp(HL, .5 * k); if (m.emissive) m.emissive.copy(HL).multiplyScalar(.3 * k); }
+}
+function update(dt, t){
+  const hold = S.explode || S.ep > .001;
+
+  // driving: out of the garage and back in again, over and over while Drive is on
+  const z0 = S.carZ;
+  S.phase = '';
+  if (!hold){
+    if (S.leg === 'home'){ if (S.drive && S.plugK < .02 && S.charge > .02){ S.leg = 'out'; S.legT = 0; } }
+    else if (S.leg === 'out'){ S.legT = Math.min(1, S.legT + dt / LEG_TIME); S.carZ = OUT_Z * easeIO(S.legT); S.phase = S.legT < .5 ? 'speed' : 'slow'; if (S.legT >= 1){ S.leg = 'away'; S.legT = 0; } }
+    else if (S.leg === 'away'){ S.legT += dt; if (S.legT > 1.2){ S.leg = 'back'; S.legT = 0; } }
+    else if (S.leg === 'back'){ S.legT = Math.min(1, S.legT + dt / LEG_TIME); S.carZ = OUT_Z * (1 - easeIO(S.legT)); S.phase = 'back'; if (S.legT >= 1){ S.leg = 'rest'; S.legT = 0; S.carZ = 0; } }
+    else if (S.leg === 'rest'){ S.legT += dt; if (S.legT > 1.2 || !S.drive){ S.leg = 'home'; S.legT = 0; } }
+  }
+  const dz = S.carZ - z0;
+  carRoot.position.z = S.carZ;
+  for (const w of wheels) w.rotation.z -= dz / WHEEL_R;
+  if (S.wantPlug && atHome()){ S.plugged = true; S.wantPlug = false; }
+
+  // battery: driving uses it, slowing down puts a little back, the charger fills it
+  if (S.phase === 'speed' || S.phase === 'back') S.charge -= dt * .012;
+  if (S.phase === 'slow') S.charge += dt * .003;
+
+  // the charging cable plugs in only when the car is home
+  S.plugK = clamp(S.plugK + ((S.plugged && atHome()) ? 1 : -1) * dt / .9, 0, 1);
+  setCable(S.plugK);
+  portFlap.rotation.y = -1.6 * smooth(0, .3, S.plugK);
+  const plugIn = S.plugK > .98;
+  if (plugIn && !hold) S.charge += FILL * dt;
+  S.charge = clamp(S.charge, 0, 1);
+
+  // the blade cells light up as the battery fills; the next one pulses while charging
+  const lit = S.charge * CELLS;
+  cellMats.forEach((m, i) => {
+    const k = clamp(lit - i, 0, 1);
+    let glow = k >= 1 ? .3 : 0;
+    if (charging() && i === Math.floor(lit)) glow = .1 + .3 * (.5 + .5 * Math.sin(t * 5));
+    m.color.copy(m.userData.base).lerp(limeGlow, k >= 1 ? 1 : 0);
+    m.emissive.copy(limeGlow).multiplyScalar(glow);
+  });
+  chargerRingMat.emissive.copy(tealCol).multiplyScalar(!plugIn ? .15 : S.charge < 1 ? .5 + .9 * (.5 + .5 * Math.sin(t * 3)) : 1.2);
+  const lightsOn = S.leg !== 'home' && S.leg !== 'rest';
+  headMat.emissive.copy(warm).multiplyScalar(lightsOn ? 1.4 : 0);
+  tailMat.emissive.setRGB(lightsOn ? .9 : .05, lightsOn ? .1 : 0, lightsOn ? .1 : 0);
+
+  // explode: the car comes apart upwards
+  S.ep = clamp(S.ep + (S.explode ? 1 : -1) * dt / (reduceMotion ? .3 : (S.explode ? 1.25 : .6)), 0, 1);
+  for (const p of partList){
+    if (p.row !== 'car') continue;
+    const local = easeIO(clamp(S.ep * 1.3 - .3 * (1 - p.rank), 0, 1));
+    p.group.position.copy(p.base).addScaledVector(p.off, local);
+  }
+
+  // x-ray: the car's body, windows and the garage walls turn see-through
+  const xT = (S.xray && S.ep < .02) ? 1 : 0;
+  S.xr += (xT - S.xr) * Math.min(1, dt * 6);
+  for (const m of shellMats){ m.opacity = m.userData.op * (1 - .8 * S.xr); m.depthWrite = S.xr < .25; }
+
+  // highlights
+  const pulseK = .36 + .26 * Math.sin(t * 3.4);
+  for (const p of partList){
+    const tg = S.hovered === p ? 1 : (S.stepHL.has(p.id) && S.ep < .02 ? pulseK : 0);
+    let nh = p.hl + (tg - p.hl) * Math.min(1, dt * 12);
+    if (tg === 0 && nh < .004) nh = 0;
+    if (nh !== p.hl){ p.hl = nh; applyHighlight(p, nh); }
+  }
+
+  // flows
+  const chg = plugIn && S.charge < 1 && !hold;
+  wallFlow.update(dt, chg); cableFlow.update(dt, chg); carChargeFlow.update(dt, chg);
+  driveFlow.update(dt, (S.phase === 'speed' || S.phase === 'back') && !hold);
+  regenFlow.update(dt, S.phase === 'slow' && !hold);
+
+  // camera tween
+  if (tween){
+    tween.t += dt; const k = easeIO(clamp(tween.t / tween.dur, 0, 1));
+    camera.position.lerpVectors(tween.p0, tween.to.p, k);
+    controls.target.lerpVectors(tween.t0, tween.to.t, k);
+    if (k >= 1) tween = null;
+  }
+
+  if (needPick && pointer && !dragging){
+    needPick = false;
+    const p = pick(pointer.x, pointer.y);
+    S.hovered = p; canvas.classList.toggle('pick', !!p);
+    if (p) showTip(p, pointer.x, pointer.y); else tip.hidden = true;
+  }
+  roT += dt; if (roT > .1){ roT = 0; updateReadout(); btnPlug.setAttribute('aria-pressed', String(S.plugged || S.wantPlug)); btnDrive.setAttribute('aria-pressed', String(S.drive)); }
+}
+
+/* ---------------------------------------------------------------- go */
+setCable(0);
+resize();
+window.addEventListener('resize', resize);
+if ('ResizeObserver' in window) new ResizeObserver(() => resize()).observe(guide);
+/* ---------------------------------------------------------------- storybook look: less shiny fill light, so the palette stays deep and saturated */
+scene.traverse(o => {
+  for (const m of (o.material ? [].concat(o.material) : [])) if (m.envMapIntensity !== undefined && !m.userData.sbEnv){ m.userData.sbEnv = 1; m.envMapIntensity *= .35; }
+});
+/* ---------------------------------------------------------------- fold the walkthrough card */
+{
+  const tgl = $('#g-toggle'), foldTxt = $('#g-fold-txt');
+  let downY = null, swiped = false;
+  function setCollapsed(on){
+    if (guide.classList.contains('collapsed') === on) return;
+    guide.classList.toggle('collapsed', on);
+    tgl.setAttribute('aria-expanded', String(!on));
+    tgl.title = on ? 'Tap or swipe up to show' : 'Tap or swipe down to hide';
+    foldTxt.textContent = on ? 'Show' : 'Hide';
+    resize();
+    flyTo(S.explode ? explodeView() : VIEWS[STEPS[S.step].view], .8);
+  }
+  tgl.addEventListener('click', () => { if (swiped){ swiped = false; return; } setCollapsed(!guide.classList.contains('collapsed')); });
+  tgl.addEventListener('pointerdown', e => { downY = e.clientY; swiped = false; });
+  tgl.addEventListener('pointerup', e => {
+    if (downY === null) return;
+    const dy = e.clientY - downY; downY = null;
+    if (dy > 30){ swiped = true; setCollapsed(true); }
+    else if (dy < -30){ swiped = true; setCollapsed(false); }
+  });
+  tgl.addEventListener('pointercancel', () => { downY = null; });
+}
+goStep(0);
+resize();
+{ const v = viewPose(VIEWS.overview); camera.position.copy(v.p); controls.target.copy(v.t); tween = null; controls.update(); }
+let last = performance.now();
+function frame(now){
+  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  update(dt, now / 1000);
+  controls.update();
+  renderer.render(scene, camera);
+  updateLabels();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
